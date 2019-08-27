@@ -6,6 +6,15 @@ https://cho45.stfuawsc.com/NanoVNA/
 
 <a href="https://github.com/ttrftech/NanoVNA">NanoVNA</a> interface implementation with WebUSB.
 
+
+# Usage
+
+There are no requirements except a browser supporting WebUSB (available by default with Google Chrome currently)
+
+1. Access to https://cho45.stfuawsc.com/NanoVNA/ .
+2. Connect your NanoVNA to USB port.
+3. Click [CONNECT] and select the device.
+
 # Screenshots
 
 <img src="images/DSC07514-900.jpg">
