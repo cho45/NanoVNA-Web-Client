@@ -70,6 +70,10 @@
 				margin-bottom: 7px;
 			}
 
+			.md-tabs-navigation .md-button {
+				height: 32px;
+			}
+
 			@media (orientation: landscape) {
 				.md-app-content {
 					display: flex;
@@ -169,7 +173,11 @@
 
 				<md-app-content>
 					<div id="input-form">
-						<div class="md-layout md-gutter">
+						<md-tabs md-alignment="fixed">
+							<md-tab @click="freqInputSelect = 'start-stop'" md-label="Start/Stop"></md-tab>
+							<md-tab @click="freqInputSelect = 'center-span'" md-label="Center/Span"></md-tab>
+						</md-tabs>
+						<div class="md-layout md-gutter" v-show="freqInputSelect == 'start-stop'">
 							<div class="md-layout-item md-size-50">
 								<md-field class="">
 									<label>Start</label>
@@ -185,7 +193,7 @@
 								</md-field>
 							</div>
 						</div>
-						<div class="md-layout md-gutter">
+						<div class="md-layout md-gutter" v-show="freqInputSelect == 'center-span'">
 							<div class="md-layout-item md-size-50">
 								<md-field class="">
 									<label>Center</label>
@@ -213,13 +221,21 @@
 						</md-list -->
 
 						<div id="traces">
-							<md-chip md-clickable @click="editTrace(trace)" v-for="trace in traces" class="trace md-primary" :style="{ backgroundColor: trace.color }" :data-color="trace.color">CH{{ trace.channel }} {{ trace.format }}</md-chip>
+							<md-chip md-clickable :md-disabled="!trace.show" @click="editTrace(trace)" v-for="trace in traces" class="trace md-primary" :style="{ backgroundColor: trace.color }" :data-color="trace.color">CH{{ trace.channel }} {{ nameOfFormat(trace.format) }}</md-chip>
 							<md-chip md-clickable @click="addTrace()" class="md-primary">+</md-chip>
 						</div>
 					</div>
-					<div id="graph" class="" style="position: relative">
-						<canvas ref="smith" id="smith" width="800" height="800" v-show="showSmithChart"></canvas>
-						<canvas ref="freq" id="freq" width="800" height="800" v-show="showFreqChart" style=""></canvas>
+					<div style="display: flex; flex-direction: column; flex: 1">
+						<md-tabs md-alignment="fixed">
+							<md-tab @click="showFreqChart = false; showSmithChart = true" md-label="SMITH"></md-tab>
+							<md-tab @click="showSmithChart = false; showFreqChart = true" md-label="FREQ"></md-tab>
+						</md-tabs>
+						<div style="position: relative; flex: 1">
+							<div id="graph" class="" style="position: relative">
+								<canvas ref="smith" id="smith" width="800" height="800" v-show="availableSmithChart && showSmithChart"></canvas>
+								<canvas ref="freq" id="freq" width="800" height="800" v-show="availableFreqChart && showFreqChart" style=""></canvas>
+							</div>
+						</div>
 					</div>
 				</md-app-content>
 			</md-app>
@@ -230,8 +246,9 @@
 			<md-dialog-alert :md-active.sync="alert.show" :md-title="alert.title" :md-content="alert.content"></md-dialog-alert>
 
 			<md-dialog :md-active.sync="showTraceDialog">
-				<md-dialog-title>Trace</md-dialog-title>
+				<md-dialog-title :style="{ backgroundColor: currentTraceSetting.color, color: '#fff' }">Trace</md-dialog-title>
 				<md-dialog-content>
+					<md-switch v-model="currentTraceSetting.show">Show</md-switch>
 					<md-field>
 						<label for="traceChannel">Channel</label>
 						<md-select v-model="currentTraceSetting.channel" name="traceChannel" id="traceChannel">

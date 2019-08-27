@@ -118,6 +118,8 @@ new Vue({
 			format: 'smith'
 		},
 
+		freqInputSelect: "start-stop",
+
 		updating: false,
 
 		showCalibrationDialog: false,
@@ -132,7 +134,10 @@ new Vue({
 		calibrationStep: "reset",
 
 		showSmithChart: true,
-		showFreqChart: true,
+		showFreqChart: false,
+		availableSmithChart: true,
+		availableFreqChart: true,
+		graphSelected: 'smith',
 
 		data: {
 			ch0: [],
@@ -375,6 +380,11 @@ new Vue({
 			this.traces.splice(target, 1);
 			this.showTraceDialog = false;
 		},
+
+		nameOfFormat: function (format) {
+			// XXX
+			return format.toUpperCase();
+		}
 	},
 
 	created: async function () {
@@ -455,6 +465,7 @@ new Vue({
 
 			const axisSet = new Set();
 			for (let trace of this.traces) {
+				if (!trace.show) continue;
 				const [chart, func, yAxisID] = {
 					'smith': [this.smithChart, calcZr, undefined],
 					'logmag': [this.freqChart, calcLogMag, 'y-axis-dB'],
@@ -485,8 +496,8 @@ new Vue({
 				});
 			}
 
-			this.showSmithChart = !!this.smithChart.data.datasets.length;
-			this.showFreqChart  = !!this.freqChart.data.datasets.length;
+			this.availableSmithChart = !!this.smithChart.data.datasets.length;
+			this.availableFreqChart  = !!this.freqChart.data.datasets.length;
 
 			for (let yAxis of this.freqChart.options.scales.yAxes) {
 				yAxis.display = axisSet.has(yAxis.id);
@@ -633,6 +644,7 @@ new Vue({
 						{
 							display: true,
 							ticks: {
+								maxTicksLimit: 11,
 								callback: (tick) => (tick / 1e6).toFixed(0) + 'MHz'
 							},
 							scaleLabel: {
