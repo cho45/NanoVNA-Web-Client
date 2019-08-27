@@ -542,6 +542,8 @@ new Vue({
 					line: {
 						fill: false,
 						tension: 0,
+						borderCapStyle: 'round',
+						borderJoinStyle: 'round',
 					}
 				},
 				tooltips: {
