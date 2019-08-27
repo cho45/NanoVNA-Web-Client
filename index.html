@@ -312,5 +312,12 @@
 				</md-dialog-actions>
 			</md-dialog>
 		</div>
+		<script>
+			window.addEventListener('load', function() {
+				if ('serviceWorker' in navigator) {
+					navigator.serviceWorker.register('./sw.js');
+				}
+			});
+		</script>
 	</body>
 </html>
