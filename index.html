@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+		<title>NanoVNA</title>
+
+
+		<link rev="made" href="mailto:cho45@lowreal.net"/>
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon"/>
+
+		<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons">
+		<link rel="stylesheet" href="https://unpkg.com/vue-material/dist/vue-material.min.css">
+		<link rel="stylesheet" href="https://unpkg.com/vue-material/dist/theme/default.css">
+
+
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+		<script src="./lib/chartjs-chart-smith.js"></script>
+		<script src="https://unpkg.com/vue"></script>
+		<script src="https://unpkg.com/vue-material"></script>
+		<script src="nanovna.js"></script>
+		<script src="script.js" type="module"></script>
+		<style>
+			.md-app {
+				height: 100vh;
+			}
+
+			input {
+				width: 100%;
+			}
+
+			.md-field {
+				margin-bottom: 10px;
+			}
+
+			canvas {
+				width: 100%;
+				height: 100%;
+			}
+
+			#graph {
+				width: 100%;
+				height: 100%;
+			}
+
+			#graph > canvas {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+			}
+
+			.md-app-content {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				padding: 8px 16px 8px 16px;
+			}
+
+			#traces {
+				display: flex;
+				flex-wrap: wrap;
+				width: 100%;
+			}
+
+			#traces .trace {
+				margin-bottom: 7px;
+			}
+
+			@media (orientation: landscape) {
+				.md-app-content {
+					display: flex;
+					flex-direction: row;
+				}
+
+				#input-form {
+					max-width: 480px;
+					min-width: 240px;
+				}
+
+				#graph {
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app">
+			<md-app  md-waterfall md-mode="fixed">
+				<md-app-toolbar class="">
+					<md-button class="md-icon-button" @click="menuVisible = !menuVisible">
+						<md-icon>menu</md-icon>
+					</md-button>
+					<h3 class="md-title" style="flex: 1">NanoVNA</h3>
+					<md-button class="md-primary" v-show="disconnected" @click="connect()"><md-icon>usb</md-icon> connect</md-button>
+					<md-button class="md-primary" v-show="status === 'connecting'" disabled><md-icon>usb</md-icon> connecting...</md-button>
+					<md-button class="md-primary" v-show="connected && autoUpdate" @click="pause"><md-icon>pause</md-icon> Pause</md-button>
+					<md-button class="md-primary" v-show="connected && !autoUpdate" @click="resume"><md-icon>refresh</md-icon> Resume</md-button>
+				</md-app-toolbar>
+
+
+				<md-app-drawer :md-active.sync="menuVisible" style="width: 280px;">
+					<md-toolbar class="md-transparent" md-elevation="0">Actions</md-toolbar>
+
+					<md-list>
+						<md-subheader>Device</md-subheader>
+						<md-list-item @click="connect()" v-show="disconnected">
+							<md-icon>usb</md-icon>
+							<span class="md-list-item-text">Connect</span>
+						</md-list-item>
+						<md-list-item disabled v-show="status === 'connecting'">
+							<md-icon>usb</md-icon>
+							<span class="md-list-item-text">Connect</span>
+						</md-list-item>
+						<md-list-item @click="disconnect()" v-show="connected">
+							<md-icon>cancel</md-icon>
+							<span class="md-list-item-text">Disconnect</span>
+						</md-list-item>
+						<md-subheader>Save</md-subheader>
+						<md-list-item @click="saveAs('s1p')" :disabled="!connected">
+							<md-icon>save_alt</md-icon>
+							<span class="md-list-item-text">Save As .s1p</span>
+						</md-list-item>
+						<md-list-item @click="saveAs('s2p')" :disabled="!connected">
+							<md-icon>save_alt</md-icon>
+							<span class="md-list-item-text">Save As .s2p</span>
+						</md-list-item>
+						<md-list-item @click="saveAsPng" :disabled="!connected">
+							<md-icon>image</md-icon>
+							<span class="md-list-item-text">Save As .png</span>
+						</md-list-item>
+						<md-list-item @click="capture" :disabled="!connected">
+							<md-icon>image</md-icon>
+							<span class="md-list-item-text">Capture Device</span>
+						</md-list-item>
+
+						<md-divider></md-divider>
+
+						<md-subheader>State</md-subheader>
+						<!--
+						<md-list-item @click="test" :disabled="!connected">
+							<md-icon>save</md-icon>
+							<span class="md-list-item-text">Save State</span>
+						</md-list-item>
+						<md-list-item @click="test" :disabled="!connected">
+							<md-icon>settings_backup_restore</md-icon>
+							<span class="md-list-item-text">Recall State</span>
+						</md-list-item>
+						-->
+						<md-list-item @click="test" :disabled="!connected">
+							<md-icon>settings_input_antenna</md-icon>
+							<span class="md-list-item-text" @click="showCalibrationDialog = true">Calibrate...</span>
+						</md-list-item>
+
+						<md-divider></md-divider>
+						<md-subheader>About</md-subheader>
+						<md-list-item @click="test">
+							<md-icon>info</md-icon>
+							<span class="md-list-item-text">NanoVNA v{{deviceInfo.version || 'unknown'}}</span>
+						</md-list-item>
+					</md-list>
+				</md-app-drawer>
+
+				<md-app-content>
+					<div id="input-form">
+						<div class="md-layout md-gutter">
+							<div class="md-layout-item md-size-50">
+								<md-field class="">
+									<label>Start</label>
+									<md-input type="number" min="0" max="1000" v-model="range.start" @focus="range.focusing='start'" @blur="range.focusing=''"></md-input>
+									<span class="md-suffix">MHz</span>
+								</md-field>
+							</div>
+							<div class="md-layout-item md-size-50">
+								<md-field class="">
+									<label>Stop</label>
+									<md-input type="number" min="0" max="1000" v-model="range.stop" @focus="range.focusing='stop'" @blur="range.focusing=''"></md-input>
+									<span class="md-suffix">MHz</span>
+								</md-field>
+							</div>
+						</div>
+						<div class="md-layout md-gutter">
+							<div class="md-layout-item md-size-50">
+								<md-field class="">
+									<label>Center</label>
+									<md-input type="number" min="0" max="1000" v-model="range.center" @focus="range.focusing='center'" @blur="range.focusing=''"></md-input>
+									<span class="md-suffix">MHz</span>
+								</md-field>
+							</div>
+							<div class="md-layout-item md-size-50">
+								<md-field class="">
+									<label>Span</label>
+									<md-input type="number" min="0" max="1000" v-model="range.span" @focus="range.focusing='span'" @blur="range.focusing=''"></md-input>
+									<span class="md-suffix">MHz</span>
+								</md-field>
+							</div>
+						</div>
+
+						<!-- md-list id="traces" class="md-dense">
+							<md-list-item v-for="trace in traces">
+								<md-icon>{{ trace.channel == "1" ? "call_missed" : "call_received"}}</md-icon>
+								<span class="md-list-item-text">CH{{ trace.channel }} {{ trace.format }}</span>
+								<md-button class="md-icon-button md-list-action">
+									<md-icon class="md-primary">chat_bubble</md-icon>
+								</md-button>
+							</md-list-item>
+						</md-list -->
+
+						<div id="traces">
+							<md-chip md-clickable @click="editTrace(trace)" v-for="trace in traces" class="trace md-primary" :style="{ backgroundColor: trace.color }" :data-color="trace.color">CH{{ trace.channel }} {{ trace.format }}</md-chip>
+							<md-chip md-clickable @click="addTrace()" class="md-primary">+</md-chip>
+						</div>
+					</div>
+					<div id="graph" class="" style="position: relative">
+						<canvas ref="smith" id="smith" width="800" height="800" v-show="showSmithChart"></canvas>
+						<canvas ref="freq" id="freq" width="800" height="800" v-show="showFreqChart" style=""></canvas>
+					</div>
+				</md-app-content>
+			</md-app>
+
+			<md-snackbar :md-active.sync="snackbar.show" md-persistent>
+				{{ snackbar.message }}
+			</md-snackbar>
+			<md-dialog-alert :md-active.sync="alert.show" :md-title="alert.title" :md-content="alert.content"></md-dialog-alert>
+
+			<md-dialog :md-active.sync="showTraceDialog">
+				<md-dialog-title>Trace</md-dialog-title>
+				<md-dialog-content>
+					<md-field>
+						<label for="traceChannel">Channel</label>
+						<md-select v-model="currentTraceSetting.channel" name="traceChannel" id="traceChannel">
+							<md-option value="0">CH0 Reflect</md-option>
+							<md-option value="1">CH1 Through</md-option>
+						</md-select>
+					</md-field>
+					<md-field>
+						<label for="traceFormat">Trace Format</label>
+						<md-select v-model="currentTraceSetting.format" name="traceFormat" id="traceFormat">
+							<md-option value="smith">Smith Chart</md-option>
+							<md-option value="logmag">LogMag</md-option>
+							<!--md-option value="delay">Delay</md-option-->
+							<md-option value="phase">Phase</md-option>
+							<md-option value="swr">SWR</md-option>
+							<!-- md-option value="polar">Polar</md-option -->
+							<md-option value="linear">Linear</md-option>
+							<md-option value="real">Real</md-option>
+							<md-option value="imag">Image</md-option>
+							<md-option value="R">R (Resistance)</md-option>
+							<md-option value="X">X (Reactance)</md-option>
+							<md-option value="Z">|Z| (Impedance)</md-option>
+						</md-select>
+					</md-field>
+				</md-dialog-content>
+				<md-dialog-actions>
+					<md-button class="md-accent" @click="deleteTrace" v-show="currentTraceSetting.src">Delete</md-button>
+					<md-button class="" @click="showTraceDialog = false">Cancel</md-button>
+					<md-button class="md-primary" @click="saveTrace">OK</md-button>
+				</md-dialog-actions>
+			</md-dialog>
+
+			<md-dialog :md-active.sync="showCalibrationDialog">
+				<md-dialog-title>Calibration</md-dialog-title>
+				<md-dialog-content>
+					<md-steppers md-vertical :md-active-step.sync="calibrationStep">
+						<md-step id="reset" md-label="Reset">
+							<p>Reset current calibration status</p>
+							<md-button class="md-accent md-raised" @click="calibration('reset')" :disabled="calibrationRunning">Reset</md-button>
+						</md-step>
+						<md-step id="open" md-label="OPEN">
+							<p>Connect OPEN to CH0</p>
+							<md-button class="md-accent md-raised" @click="calibration('open')" :disabled="calibrationRunning">CAL OPEN</md-button>
+						</md-step>
+						<md-step id="short" md-label="SHORT">
+							<p>Connect SHORT to CH0</p>
+							<md-button class="md-accent md-raised" @click="calibration('short')" :disabled="calibrationRunning">CAL SHORT</md-button>
+						</md-step>
+						<md-step id="load" md-label="LOAD">
+							<p>Connect LOAD to CH0</p>
+							<md-button class="md-accent md-raised" @click="calibration('load')" :disabled="calibrationRunning">CAL LOAD/ISOLN</md-button>
+						</md-step>
+						<md-step id="thru" md-label="THRU">
+							<p>Connect CH0 and CH1 with cable</p>
+							<md-button class="md-accent md-raised" @click="calibration('thru')" :disabled="calibrationRunning">CAL THRU</md-button>
+						</md-step>
+						<md-step id="done" md-label="Done">
+							<p>Save calibration data</p>
+							<md-button class="md-accent md-raised" @click="calibration('done', 0)">Save 0</md-button>
+							<md-button class="md-accent md-raised" @click="calibration('done', 1)">Save 1</md-button>
+							<md-button class="md-accent md-raised" @click="calibration('done', 2)">Save 2</md-button>
+							<md-button class="md-accent md-raised" @click="calibration('done', 3)">Save 3</md-button>
+						</md-step>
+					</md-steppers>
+				</md-dialog-content>
+
+				<md-dialog-actions>
+					<md-button class="md-primary" @click="showCalibrationDialog = false">Close</md-button>
+				</md-dialog-actions>
+			</md-dialog>
+
+			<md-dialog :md-active.async="showCaptureDialog">
+				<md-dialog-title>Capture</md-dialog-title>
+				<md-dialog-content>
+					<canvas ref="capture" width="320" height="240" style="image-rendering: pixelated;"></canvas>
+					<md-progress-bar md-mode="indeterminate" v-show="capturing"></md-progress-bar>
+				</md-dialog-content>
+				<md-dialog-actions>
+					<md-button class="md-primary" v-show="!capturing" ref="downloadLink" download="nanovna.png" :href="captureDownloadHref"><md-icon>cloud_download</md-icon> Download</md-button>
+					<md-button class="md-accent" v-show="!capturing" @click="capture"><md-icon>refresh</md-icon> Recapture</md-button>
+					<md-button class="" @click="showCaptureDialog = false">Close</md-button>
+				</md-dialog-actions>
+			</md-dialog>
+		</div>
+	</body>
+</html>

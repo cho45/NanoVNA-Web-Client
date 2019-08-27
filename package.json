@@ -1,0 +1,18 @@
+{
+  "name": "nanovna",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "cho45 <cho45@lowreal.net> (http://www.lowreal.net/)",
+  "license": "ISC",
+  "dependencies": {
+    "comlink": "^4.0.2"
+  }
+}
