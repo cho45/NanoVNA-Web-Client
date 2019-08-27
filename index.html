@@ -127,9 +127,13 @@
 							<md-icon>save_alt</md-icon>
 							<span class="md-list-item-text">Save As .s2p</span>
 						</md-list-item>
-						<md-list-item @click="saveAsPng" :disabled="!connected">
+						<md-list-item @click="saveAsPng('smith')" :disabled="!connected" v-show="showSmithChart">
 							<md-icon>image</md-icon>
-							<span class="md-list-item-text">Save As .png</span>
+							<span class="md-list-item-text">Save Smith Chart As .png</span>
+						</md-list-item>
+						<md-list-item @click="saveAsPng('freq')" :disabled="!connected" v-show="showFreqChart">
+							<md-icon>image</md-icon>
+							<span class="md-list-item-text">Save Freq Chart As .png</span>
 						</md-list-item>
 						<md-list-item @click="capture" :disabled="!connected">
 							<md-icon>image</md-icon>

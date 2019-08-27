@@ -274,8 +274,8 @@ new Vue({
 			}
 		},
 
-		saveAsPng: function () {
-			const canvas = this.$refs[this.graph];
+		saveAsPng: function (graph) {
+			const canvas = this.$refs[graph];
 			canvas.toBlob((blob) => {
 				const url = URL.createObjectURL(blob);
 				const a = document.createElement('a');
