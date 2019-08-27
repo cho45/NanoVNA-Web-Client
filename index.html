@@ -136,7 +136,7 @@
 							<span class="md-list-item-text">Save Freq Chart As .png</span>
 						</md-list-item>
 						<md-list-item @click="capture" :disabled="!connected">
-							<md-icon>image</md-icon>
+							<md-icon>video_label</md-icon>
 							<span class="md-list-item-text">Capture Device</span>
 						</md-list-item>
 
@@ -160,7 +160,7 @@
 
 						<md-divider></md-divider>
 						<md-subheader>About</md-subheader>
-						<md-list-item @click="test">
+						<md-list-item @click="showAboutDialog = true">
 							<md-icon>info</md-icon>
 							<span class="md-list-item-text">NanoVNA v{{deviceInfo.version || 'unknown'}}</span>
 						</md-list-item>
@@ -313,6 +313,21 @@
 					<md-button class="md-primary" v-show="!capturing" ref="downloadLink" download="nanovna.png" :href="captureDownloadHref"><md-icon>cloud_download</md-icon> Download</md-button>
 					<md-button class="md-accent" v-show="!capturing" @click="capture"><md-icon>refresh</md-icon> Recapture</md-button>
 					<md-button class="" @click="showCaptureDialog = false">Close</md-button>
+				</md-dialog-actions>
+			</md-dialog>
+
+			<md-dialog :md-active.async="showAboutDialog">
+				<md-dialog-title>About</md-dialog-title>
+				<md-dialog-content>
+					<p>
+					NanoVNA Device version: {{deviceInfo.version || 'unknown'}}
+					</p>
+					<p>
+					<a href="https://github.com/cho45/NanoVNA-WebUSB-Client">NanoVNA WebUSB Client</a>
+					</p>
+				</md-dialog-content>
+				<md-dialog-actions>
+					<md-button class="" @click="showAboutDialog = false">Close</md-button>
 				</md-dialog-actions>
 			</md-dialog>
 		</div>

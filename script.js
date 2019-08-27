@@ -126,6 +126,8 @@ new Vue({
 		captureDownloadHref: "",
 		showCaptureDialog: false,
 
+		showAboutDialog: false,
+
 		calibrationRunning: false,
 		calibrationStep: "reset",
 
