@@ -354,6 +354,7 @@ new Vue({
 
 		addTrace: function () {
 			this.currentTraceSetting = {
+				show: true,
 				channel: 0,
 				format: 'logmag',
 				color: this.colorGen()
