@@ -57,6 +57,18 @@ function calcZ(i) {
 	return [zr, zi];
 }
 
+function calcLinear(i) {
+	return Math.hypot(i.real, i.imag);
+}
+
+function calcReal(i) {
+	return i.real;
+}
+
+function calcImag(i) {
+	return i.imag;
+}
+
 function calcZabs(i) {
 	return Math.hypot(...calcZ(i));
 }
@@ -439,11 +451,22 @@ new Vue({
 
 			console.log(this.traces);
 
+			const axisSet = new Set();
 			for (let trace of this.traces) {
 				const [chart, func, yAxisID] = {
 					'smith': [this.smithChart, calcZr, undefined],
 					'logmag': [this.freqChart, calcLogMag, 'y-axis-dB'],
+					'phase': [this.freqChart, calcPhase, 'y-axis-phase'],
+					'swr': [this.freqChart, calcSWR, 'y-axis-swr'],
+					'linear': [this.freqChart, calcLinear, 'y-axis-z'],
+					'real': [this.freqChart, calcReal, 'y-axis-z'],
+					'imag': [this.freqChart, calcImag, 'y-axis-z'],
+					'R': [this.freqChart, calcZR, 'y-axis-z'],
+					'X': [this.freqChart, calcZX, 'y-axis-z'],
+					'Z': [this.freqChart, calcZabs, 'y-axis-z'],
 				}[trace.format];
+
+				if (yAxisID) axisSet.add(yAxisID);
 
 				const n = chart.data.datasets.length;
 				chart.data.datasets.push({
@@ -460,8 +483,12 @@ new Vue({
 				});
 			}
 
-			this.showSmithChart = !!this.smithChart.data.datasets;
-			this.showFreqChart  = !!this.freqChart.data.datasets;
+			this.showSmithChart = !!this.smithChart.data.datasets.length;
+			this.showFreqChart  = !!this.freqChart.data.datasets.length;
+
+			for (let yAxis of this.freqChart.options.scales.yAxes) {
+				yAxis.display = axisSet.has(yAxis.id);
+			}
 			updateGraph();
 		});
 
@@ -602,19 +629,19 @@ new Vue({
 						{
 							display: true,
 							ticks: {
-								callback: (tick) => (tick / 1e6).toFixed(0)
+								callback: (tick) => (tick / 1e6).toFixed(0) + 'MHz'
 							},
 							scaleLabel: {
 								display: false,
 								labelString: "frequency"
 							},
-							afterFit: (scale) => scale.height = 35,
+							afterFit: (scale) => scale.height = 50,
 						}
 					],
 					yAxes: [
 						{
 							id: 'y-axis-dB',
-							display: false,
+							display: true,
 							type: 'linear',
 							ticks: {
 								min: -80.0,
@@ -622,13 +649,13 @@ new Vue({
 								callback: (tick) => tick.toString() + 'dB'
 							},
 							scaleLabel: {
-								display: true,
+								display: false,
 								labelString: "mag [dB]"
 							}
 						},
 						{
 							id: 'y-axis-swr',
-							display: false,
+							display: true,
 							type: 'linear',
 							ticks: {
 								min: 1.0,
@@ -636,7 +663,7 @@ new Vue({
 								callback: (tick) => tick.toString() 
 							},
 							scaleLabel: {
-								display: true,
+								display: false,
 								labelString: "SWR"
 							},
 							position: 'right',
@@ -651,10 +678,10 @@ new Vue({
 							ticks: {
 								min: -90 * 3,
 								max: +90 * 3,
-								callback: (tick) => tick.toString() 
+								callback: (tick) => tick.toString() + '\u00b0'
 							},
 							scaleLabel: {
-								display: true,
+								display: false,
 								labelString: "Phase"
 							},
 							position: 'right',
@@ -669,10 +696,10 @@ new Vue({
 							ticks: {
 								min: -100,
 								max: +100,
-								callback: (tick) => tick.toString() 
+								callback: (tick) => tick.toString() + '\u03a9'
 							},
 							scaleLabel: {
-								display: true,
+								display: false,
 								labelString: "Z"
 							},
 							position: 'right',
@@ -686,62 +713,6 @@ new Vue({
 			data: {
 				labels: SAMPLE_DATA.map( (d) => d.freq ),
 				datasets: [
-					{
-						label: 'S11 LogMag',
-						fill: false,
-						borderColor: 'rgba(0, 200, 0, 0.5)',
-						backgroundColor: 'rgba(0, 0, 0, 0.0)',
-						data: [],
-						yAxisID: 'y-axis-dB',
-					},
-					{
-						label: 'S21 LogMag',
-						fill: false,
-						borderColor: 'rgba(0, 0, 200, 0.5)',
-						backgroundColor: 'rgba(0, 0, 0, 0.0)',
-						data: [],
-						yAxisID: 'y-axis-dB',
-					},
-					{
-						label: 'S11 SWR',
-						fill: false,
-						borderColor: 'rgba(0, 0, 200, 0.5)',
-						backgroundColor: 'rgba(0, 0, 0, 0.0)',
-						data: [],
-						yAxisID: 'y-axis-swr',
-					},
-					{
-						label: 'S11 Phase',
-						fill: false,
-						borderColor: 'rgba(200, 200, 0, 0.5)',
-						backgroundColor: 'rgba(0, 0, 0, 0.0)',
-						data: [],
-						yAxisID: 'y-axis-phase',
-					},
-					{
-						label: 'S11 |Z|',
-						fill: false,
-						borderColor: 'rgba(200, 0, 200, 0.5)',
-						backgroundColor: 'rgba(0, 0, 0, 0.0)',
-						data: [],
-						yAxisID: 'y-axis-z',
-					},
-					{
-						label: 'S11 R',
-						fill: false,
-						borderColor: 'rgba(0, 200, 200, 0.5)',
-						backgroundColor: 'rgba(0, 0, 0, 0.0)',
-						data: [],
-						yAxisID: 'y-axis-z',
-					},
-					{
-						label: 'S11 X',
-						fill: false,
-						borderColor: 'rgba(100, 200, 100, 0.5)',
-						backgroundColor: 'rgba(0, 0, 0, 0.0)',
-						data: [],
-						yAxisID: 'y-axis-z',
-					},
 				]
 			}
 		});
