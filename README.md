@@ -23,3 +23,23 @@ Connect via USB OTG connector.
 
 <img src="images/Screenshot_20190827_231734_com.android.chrome.jpg" width=270 height=561> <img src="images/Screenshot_20190827_231803_com.android.chrome.jpg" width=270 height=561> <img src="images/Screenshot_20190827_231746_com.android.chrome.jpg" width=270 height=561> <img src="images/Screenshot_20190827_231756_com.android.chrome.jpg" width=270 height=561>
 
+
+# Build
+
+This project uses Rust partially for DSP. 
+
+## Install some tools
+
+- <a href="https://www.rust-lang.org/tools/install">Install Rust</a>
+
+and install build tools as following:
+
+```
+$ cargo install wasm-pack
+$ cargo install --force cargo-make
+
+```
+
+See also <a href="https://developer.mozilla.org/en-US/docs/WebAssembly/Rust_to_wasm">Compiling from Rust to WebAssembly</a>
+
+
