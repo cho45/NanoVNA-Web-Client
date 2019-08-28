@@ -141,6 +141,7 @@ new Vue({
 
 		showTDRDialog: false,
 		velocityOfSignalPropagation: 70,
+		peakTDR: 0,
 
 		data: {
 			ch0: [],
@@ -352,7 +353,9 @@ new Vue({
 		},
 
 		calcTDR: async function () {
-			console.log(this.TDRChart);
+			this.showTDRDialog = true;
+			await Promise.resolve();
+
 			if (!this.TDRChart || this.TDRChart.canvas !== this.$refs.TDR) {
 				this.TDRChart = new Chart(this.$refs.TDR.getContext('2d'), {
 					type: 'line',
@@ -406,7 +409,7 @@ new Vue({
 									display: true,
 									ticks: {
 										maxTicksLimit: 11,
-										callback: (tick) => tick.toFixed(3) + 'm'
+										callback: (tick) => (tick * (this.velocityOfSignalPropagation / 100)).toFixed(3) + 'm'
 									},
 									scaleLabel: {
 										display: false,
@@ -451,7 +454,12 @@ new Vue({
 			const tdr = await this.backend.calcTDR();
 			console.log(tdr);
 			console.log({velocityOfSignalPropagation});
-			this.TDRChart.data.labels = Array.from(tdr.time.map( (i) => i * SPEED_OF_LIGHT * velocityOfSignalPropagation / 2));
+
+			const distances = Array.from(tdr.time.map( (i) => i * SPEED_OF_LIGHT / 2));
+			console.log(Math.max(...tdr.mag));
+			this.peakTDR = distances[tdr.mag.indexOf(Math.max(...tdr.mag))];
+
+			this.TDRChart.data.labels = distances;
 			this.TDRChart.data.datasets[0].data = Array.from(tdr.mag);
 			this.TDRChart.update();
 		},
@@ -642,6 +650,12 @@ new Vue({
 
 		this.$watch('data.ch0', updateGraph);
 		this.$watch('data.ch1', updateGraph);
+
+		this.$watch('velocityOfSignalPropagation', () => {
+			if (this.TDRChart) {
+				this.TDRChart.update();
+			}
+		});
 
 
 		this.traces = [

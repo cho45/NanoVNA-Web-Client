@@ -147,7 +147,7 @@
 						<md-divider></md-divider>
 
 						<md-subheader>Etc</md-subheader>
-						<md-list-item @click="showTDRDialog = true;" :disabled="!connected">
+						<md-list-item @click="calcTDR" :disabled="!connected">
 							<md-icon>video_label</md-icon>
 							<span class="md-list-item-text">TDR</span>
 						</md-list-item>
@@ -347,6 +347,7 @@
 						<canvas ref="TDR" width="640" height="480" style="image-rendering: pixelated;"></canvas>
 					</div>
 					<div style="position: relative">
+						<div>Peak: {{peakTDR * (velocityOfSignalPropagation / 100)}}m</div>
 						<md-field class="" style="width: 200px; margin: 0 0 0 auto">
 							<label>Velocity of signal propagation</label>
 							<md-input type="number" min="0" max="100" step="1" v-model="velocityOfSignalPropagation"></md-input>
