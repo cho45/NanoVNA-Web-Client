@@ -352,7 +352,8 @@ new Vue({
 		},
 
 		calcTDR: async function () {
-			if (!this.TDRChart) {
+			console.log(this.TDRChart);
+			if (!this.TDRChart || this.TDRChart.canvas !== this.$refs.TDR) {
 				this.TDRChart = new Chart(this.$refs.TDR.getContext('2d'), {
 					type: 'line',
 					options: {
@@ -409,7 +410,7 @@ new Vue({
 									},
 									scaleLabel: {
 										display: false,
-										labelString: "distance"
+										labelString: "distance (one way)"
 									},
 								}
 							],
@@ -449,8 +450,8 @@ new Vue({
 
 			const tdr = await this.backend.calcTDR();
 			console.log(tdr);
-			this.TDRChart.data.labels = Array.from(tdr.time.map( (i) => i * SPEED_OF_LIGHT * velocityOfSignalPropagation));
-			this.TDRChart.data.labels = Array.from(tdr.time.map( (i) => i * 1e7 ));
+			console.log({velocityOfSignalPropagation});
+			this.TDRChart.data.labels = Array.from(tdr.time.map( (i) => i * SPEED_OF_LIGHT * velocityOfSignalPropagation / 2));
 			this.TDRChart.data.datasets[0].data = Array.from(tdr.mag);
 			this.TDRChart.update();
 		},

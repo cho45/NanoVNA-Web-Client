@@ -21,19 +21,8 @@ class Worker {
 		console.log('init worker');
 		await lib.wasm_bindgen("./dsp-wasm/no-modules/dsp_wasm_bg.wasm");
 
-		const windowFunction = (x) => {
-			// blackman window
-			const alpha = 0.16;
-			const a0 = (1.0 - alpha) / 2.0;
-			const a1 = 1.0 / 2.0;
-			const a2 = alpha / 2.0;
-			return  a0 - a1 * Math.cos(2 * Math.PI * x) + a2 * Math.cos(4 * Math.PI * x);
-		};
-
 		const window = new Float32Array(FFT_SIZE);
-		for (let i = 0; i < FFT_SIZE; i++) {
-			window[i] = windowFunction(i / FFT_SIZE);
-		}
+		window.fill(1);
 		this.FFT = new lib.wasm_bindgen.FFT(FFT_SIZE, window);
 	}
 
@@ -106,9 +95,23 @@ class Worker {
 	}
 
 	async calcTDR() {
+		const windowFunction = (x) => {
+			// blackman window
+			const alpha = 0.16;
+			const a0 = (1.0 - alpha) / 2.0;
+			const a1 = 1.0 / 2.0;
+			const a2 = alpha / 2.0;
+			return  a0 - a1 * Math.cos(2 * Math.PI * x) + a2 * Math.cos(4 * Math.PI * x);
+		};
+
 		const freqs = await this.getFrequencies();
 		const data = await this.getData(0);
 		console.log('calcTDR', {freqs, data});
+
+		for (let i = 0, len = data.length; i < len; i++) {
+			data[i][0] *= windowFunction(i / len);
+			data[i][1] *= windowFunction(i / len);
+		}
 
 		const input = new Float32Array(FFT_SIZE * 2);
 		input.set(data.flat());
