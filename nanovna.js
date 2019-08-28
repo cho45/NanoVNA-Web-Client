@@ -17,6 +17,7 @@ class NanoVNA {
 		this.callbacks = [];
 		this.onerror = opts.onerror || function () {};
 		this.ondisconnected = opts.ondisconnected || function () {};
+		this.lastCommand = Promise.resolve();
 	}
 
 	static async requestDevice(filters) {
@@ -99,7 +100,7 @@ class NanoVNA {
 
 		const transfer = async (resolve) => {
 			try {
-				const result = await this.device.transferIn(USBD1_DATA_AVAILABLE_EP, 4096);
+				const result = await this.device.transferIn(USBD1_DATA_AVAILABLE_EP, 64);
 				if (this.readerThread) {
 					transfer(resolve);
 				} else {
@@ -208,13 +209,21 @@ class NanoVNA {
 		return new Promise( (resolve) => setTimeout(resolve, n * 1000) );
 	}
 
-	async sendCommand(cmd) {
-		// console.log('sendCommand', cmd);
-		await this.waitUntil('ch> ');
-		await this.write(cmd);
-		// console.log('read echo');
-		const echo = await this.readline(); // command echo line
-		// console.log('done sendCommand', echo);
+	async sendCommand(cmd, postProcess) {
+		const lastCommand = this.lastCommand;
+		this.lastCommand = (async (resolve) => {
+			await lastCommand;
+			// console.log('sendCommand', cmd);
+			await this.waitUntil('ch> ');
+			await this.write(cmd);
+			// console.log('read echo');
+			const echo = await this.readline(); // command echo line
+			// console.log('done sendCommand', echo);
+			if (postProcess) {
+				return await postProcess();
+			}
+		})();
+		return await this.lastCommand;
 	}
 
 	async setFrequency(freq) {
@@ -252,8 +261,7 @@ class NanoVNA {
 	 * 6 -> cal_data 4
 	 */
 	async getData(s) {
-		await this.sendCommand(`data ${s}\r`);
-		const data = await this.getMultiline();
+		const data = await this.sendCommand(`data ${s}\r`, async () => await this.getMultiline());
 		// console.log(data);
 
 		const nums = data.split(/\s+/);
@@ -269,8 +277,7 @@ class NanoVNA {
 			await this.setFrequency(freq);
 			await this.wait(0.05);
 		}
-		await this.sendCommand(`dump 0\r`);
-		const data = await this.getMultiline();
+		const data = await this.sendCommand(`dump 0\r`, async () => await this.getMultiline());
 		const nums = data.split(/\s+/);
 		const ret = [];
 		for (var i = 0, len = nums.length; i < len; i += 2) {
@@ -293,22 +300,19 @@ class NanoVNA {
 	}
 
 	async getFrequencies() {
-		await this.sendCommand(`frequencies\r`);
-		const data = await this.getMultiline();
+		const data = await this.sendCommand(`frequencies\r`, async () => await this.getMultiline());
 		return data.split(/\s+/).map( (n) => +n );
 	}
 
 	async getVersion() {
-		await this.sendCommand(`version\r`);
-		return (await this.readline());
+		return await this.sendCommand(`version\r`, async () => await this.readline());
 	}
 
 	async getCapture() {
 		const width = 320;
 		const height = 240;
 
-		await this.sendCommand(`capture\r`);
-		const string = await this.read(width * height * 2)
+		const string = await this.sendCommand(`capture\r`, async () => await this.read(width * height * 2));
 		const uint16view = new Uint16Array(width * height);
 		for (var i = 0, len = width * height; i < len; i++) {
 			uint16view[i] =
