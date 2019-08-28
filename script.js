@@ -139,6 +139,9 @@ new Vue({
 		availableFreqChart: true,
 		graphSelected: 'smith',
 
+		showTDRDialog: false,
+		velocityOfSignalPropagation: 70,
+
 		data: {
 			ch0: [],
 			ch1: []
@@ -346,6 +349,110 @@ new Vue({
 			ctx.putImageData(imd, 0, 0);
 			this.captureDownloadHref = canvas.toDataURL();
 			this.capturing = false;
+		},
+
+		calcTDR: async function () {
+			if (!this.TDRChart) {
+				this.TDRChart = new Chart(this.$refs.TDR.getContext('2d'), {
+					type: 'line',
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						legend: {
+							display: false,
+							position: 'top',
+							padding: 0
+						},
+						layout: {
+							padding: {
+							}
+						},
+						elements: {
+							point: {
+								pointStyle: 'cross',
+								radius: 1,
+								hitRadius: 20,
+								hoverRadius: 20,
+								borderColor: 'black',
+								borderWidth: 0,
+								hoverBorderWidth: 1,
+							},
+							line: {
+								fill: false,
+								tension: 0,
+							}
+						},
+						tooltips: {
+							enabled: true,
+							position: "nearest",
+							mode: "index",
+							intersect: false,
+							/*
+							callbacks: {
+								label: (item, data) => {
+									const {real, imag, freq} = data.datasets[item.datasetIndex].data[item.index];
+									return `${(freq/1e6).toFixed(3)}MHz ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
+								}
+							}
+							*/
+						},
+						animation: {
+							duration: 250
+						},
+						scales: {
+							xAxes: [
+								{
+									display: true,
+									ticks: {
+										maxTicksLimit: 11,
+										callback: (tick) => tick.toFixed(3) + 'm'
+									},
+									scaleLabel: {
+										display: false,
+										labelString: "distance"
+									},
+								}
+							],
+							yAxes: [
+								{
+									display: true,
+									type: 'linear',
+									ticks: {
+									},
+									scaleLabel: {
+										display: false,
+										labelString: "mag"
+									}
+								},
+							]
+						}
+					},
+					data: {
+						labels: [],
+						datasets: [
+							{
+								label: `CH0 TDR`,
+								fill: false,
+								/*
+								borderColor: trace.color,
+								backgroundColor: trace.color,
+								*/
+								data: [],
+							}
+						]
+					}
+				});
+			}
+
+			const SPEED_OF_LIGHT = 299792458;
+			const velocityOfSignalPropagation = this.velocityOfSignalPropagation / 100;
+
+			const tdr = await this.backend.calcTDR();
+			console.log(tdr);
+			this.TDRChart.data.labels = Array.from(tdr.time.map( (i) => i * SPEED_OF_LIGHT * velocityOfSignalPropagation));
+			this.TDRChart.data.labels = Array.from(tdr.time.map( (i) => i * 1e7 ));
+			this.TDRChart.data.datasets[0].data = Array.from(tdr.mag);
+			this.TDRChart.update();
 		},
 
 		editTrace: function (trace) {
@@ -761,6 +868,7 @@ new Vue({
 				]
 			}
 		});
+
 	}
 });
 

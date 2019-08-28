@@ -1,0 +1,14 @@
+{
+  "name": "dsp-wasm",
+  "collaborators": [
+    "cho45 <cho45@lowreal.net>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "dsp_wasm_bg.wasm",
+    "dsp_wasm.js",
+    "dsp_wasm.d.ts"
+  ],
+  "browser": "dsp_wasm.js",
+  "types": "dsp_wasm.d.ts"
+}

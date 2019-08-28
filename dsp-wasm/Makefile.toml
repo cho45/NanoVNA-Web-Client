@@ -1,0 +1,20 @@
+# cargo make build
+[tasks.build]
+command = "echo"
+dependencies = ["build-node", "build-web", "build-browser", "build-no-modules"]
+
+[tasks.build-node]
+command = "wasm-pack"
+args = ["build", "--target", "nodejs", "--out-dir", "node"]
+
+[tasks.build-web]
+command = "wasm-pack"
+args = ["build", "--target", "web", "--out-dir", "web"]
+
+[tasks.build-browser]
+command = "wasm-pack"
+args = ["build", "--target", "browser", "--out-dir", "browser"]
+
+[tasks.build-no-modules]
+command = "wasm-pack"
+args = ["build", "--target", "no-modules", "--out-dir", "no-modules"]

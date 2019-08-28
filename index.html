@@ -146,6 +146,14 @@
 
 						<md-divider></md-divider>
 
+						<md-subheader>Etc</md-subheader>
+						<md-list-item @click="showTDRDialog = true;" :disabled="!connected">
+							<md-icon>video_label</md-icon>
+							<span class="md-list-item-text">TDR</span>
+						</md-list-item>
+
+						<md-divider></md-divider>
+
 						<md-subheader>State</md-subheader>
 						<!--
 						<md-list-item @click="test" :disabled="!connected">
@@ -324,7 +332,6 @@
 				<md-dialog-title>Capture</md-dialog-title>
 				<md-dialog-content>
 					<canvas ref="capture" width="320" height="240" style="image-rendering: pixelated;"></canvas>
-					<md-progress-bar md-mode="indeterminate" v-show="capturing"></md-progress-bar>
 				</md-dialog-content>
 				<md-dialog-actions>
 					<md-button class="md-primary" v-show="!capturing" ref="downloadLink" download="nanovna.png" :href="captureDownloadHref"><md-icon>cloud_download</md-icon> Download</md-button>
@@ -333,6 +340,25 @@
 				</md-dialog-actions>
 			</md-dialog>
 
+			<md-dialog :md-active.async="showTDRDialog">
+				<md-dialog-title>TDR</md-dialog-title>
+				<md-dialog-content>
+					<div style="width: 100%; height: 480px">
+						<canvas ref="TDR" width="640" height="480" style="image-rendering: pixelated;"></canvas>
+					</div>
+					<div style="position: relative">
+						<md-field class="" style="width: 200px; margin: 0 0 0 auto">
+							<label>Velocity of signal propagation</label>
+							<md-input type="number" min="0" max="100" step="1" v-model="velocityOfSignalPropagation"></md-input>
+							<span class="md-suffix">%</span>
+						</md-field>
+					</div>
+				</md-dialog-content>
+				<md-dialog-actions>
+					<md-button class="md-accent" v-show="!capturing" @click="calcTDR"><md-icon>refresh</md-icon> Recalculate</md-button>
+					<md-button class="" @click="showTDRDialog = false">Close</md-button>
+				</md-dialog-actions>
+			</md-dialog>
 			<md-dialog :md-active.async="showAboutDialog">
 				<md-dialog-title>About</md-dialog-title>
 				<md-dialog-content>
