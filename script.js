@@ -386,6 +386,29 @@ new Vue({
 		nameOfFormat: function (format) {
 			// XXX
 			return format.toUpperCase();
+		},
+
+		saveLastStateToLocalStorage: function () {
+			const saving = {
+				traces: this.traces
+			};
+			console.log('save to localStorage', saving);
+			localStorage.setItem('nanovna', JSON.stringify(saving));
+		},
+
+		loadLastStateFromLocalStorage: function () {
+			let saved;
+			try {
+				saved = JSON.parse(localStorage.getItem('nanovna')) || {};
+			} catch (e) {
+				saved = {};
+			}
+
+			console.log('load from localStorage', saved);
+
+			if (saved.traces) {
+				this.traces = saved.traces;
+			}
 		}
 	},
 
@@ -504,7 +527,9 @@ new Vue({
 			for (let yAxis of this.freqChart.options.scales.yAxes) {
 				yAxis.display = axisSet.has(yAxis.id);
 			}
+
 			updateGraph();
+			this.saveLastStateToLocalStorage();
 		});
 
 		this.$watch('data.ch0', updateGraph);
@@ -531,6 +556,8 @@ new Vue({
 				color: this.colorGen()
 			},
 		];
+
+		this.loadLastStateFromLocalStorage();
 	},
 
 	mounted: async function () {
