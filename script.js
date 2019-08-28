@@ -319,6 +319,7 @@ new Vue({
 				await this.backend.doCal('done');
 				await this.backend.doSave('save', argv);
 				this.showCalibrationDialog = false;
+				this.calibrationStep = 'reset';
 			}
 			this.calibrationRunning = false;
 		},
