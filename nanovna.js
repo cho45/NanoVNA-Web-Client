@@ -14,6 +14,7 @@ const REF_LEVEL = (1<<9);
 
 class NanoVNA {
 	constructor(opts) {
+		this.initialized = false;
 		this.callbacks = [];
 		this.onerror = opts.onerror || function () {};
 		this.ondisconnected = opts.ondisconnected || function () {};
@@ -82,6 +83,7 @@ class NanoVNA {
 			if (ok) break;
 		}
 		this.buffer = 'ch> ';
+		this.initialized = true;
 
 		this.version = await this.getVersion();
 		console.log('version', this.version);
@@ -174,6 +176,7 @@ class NanoVNA {
 		}
 		console.log('call disconnect callback');
 		this.ondisconnected();
+		this.initialized = false;
 	}
 
 	async read(n) {
@@ -210,6 +213,10 @@ class NanoVNA {
 	}
 
 	async sendCommand(cmd, postProcess) {
+		if (!this.initialized) {
+			throw "device is not initialized";
+		}
+
 		const lastCommand = this.lastCommand;
 		this.lastCommand = (async (resolve) => {
 			await lastCommand;
