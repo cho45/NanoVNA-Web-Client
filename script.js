@@ -884,6 +884,8 @@ new Vue({
 			}
 		});
 
+		console.log(this);
+		this.$el.style.visibility = 'visible';
 	}
 });
 
