@@ -13,6 +13,7 @@
   "author": "cho45 <cho45@lowreal.net> (http://www.lowreal.net/)",
   "license": "ISC",
   "dependencies": {
-    "comlink": "^4.0.2"
+    "comlink": "^4.0.2",
+    "vue": "^2.6.10"
   }
 }
