@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "cho45 <cho45@lowreal.net> (http://www.lowreal.net/)",
-  "license": "ISC",
+  "license": "GPL",
   "dependencies": {
     "comlink": "^4.0.2",
     "vue": "^2.6.10",
