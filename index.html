@@ -74,6 +74,16 @@
 				height: 32px;
 			}
 
+			#fab button {
+				width: 40px;
+				height: 40px;
+			}
+
+			.md-card {
+				margin: 4px;
+				vertical-align: top;
+			}
+
 			@media (orientation: landscape) {
 				.md-app-content {
 					display: flex;
@@ -230,7 +240,6 @@
 
 						<div id="traces">
 							<md-chip md-clickable :md-disabled="!trace.show" @click="editTrace(trace)" v-for="trace in traces" class="trace md-primary" :style="{ backgroundColor: trace.color }" :data-color="trace.color">CH{{ trace.channel }} {{ nameOfFormat(trace.format) }}</md-chip>
-							<md-chip md-clickable @click="addTrace()" class="md-primary">+</md-chip>
 						</div>
 					</div>
 					<div style="display: flex; flex-direction: column; flex: 1">
@@ -252,6 +261,25 @@
 				{{ snackbar.message }}
 			</md-snackbar>
 			<md-dialog-alert :md-active.sync="alert.show" :md-title="alert.title" :md-content="alert.content"></md-dialog-alert>
+
+
+			<md-speed-dial class="md-bottom-right" md-event="click" id="fab">
+				<md-speed-dial-target>
+					<md-icon class="md-morph-initial">show_chart</md-icon>
+					<md-icon class="md-morph-final">close</md-icon>
+				</md-speed-dial-target>
+
+
+				<md-speed-dial-content>
+					<md-button class="md-icon-button" @click="showScaleDialog = true">
+						<md-icon>height</md-icon>
+					</md-button>
+
+					<md-button class="md-icon-button" @click="addTrace()">
+						<md-icon>add</md-icon>
+					</md-button>
+				</md-speed-dial-content>
+			</md-speed-dial>
 
 			<md-dialog :md-active.sync="showTraceDialog">
 				<md-dialog-title :style="{ backgroundColor: currentTraceSetting.color, color: '#fff' }">Trace</md-dialog-title>
@@ -286,6 +314,40 @@
 					<md-button class="md-accent" @click="deleteTrace" v-show="currentTraceSetting.src">Delete</md-button>
 					<md-button class="" @click="showTraceDialog = false">Cancel</md-button>
 					<md-button class="md-primary" @click="saveTrace">OK</md-button>
+				</md-dialog-actions>
+			</md-dialog>
+
+			<md-dialog :md-active.sync="showScaleDialog">
+				<md-dialog-title>Scale Settings</md-dialog-title>
+				<md-dialog-content>
+					<md-card class="md-layout-item md-size-100 md-small-size-100" v-for="scaleType in scaleTypes">
+						<md-card-header>
+							<div class="md-subheading">{{ scaleType.label }} </div>
+						</md-card-header>
+						<md-card-content>
+							<div class="md-layout md-gutter">
+								<div class="md-layout-item md-small-size-50">
+									<md-field>
+										<label>Min</label>
+										<md-input v-model="scales[scaleType.key].min"></md-input>
+										<span class="md-suffix" v-show="scaleType.suffix">{{scaleType.suffix}}</span>
+									</md-field>
+								</div>
+								<div class="md-layout-item md-small-size-50">
+									<md-field>
+										<label>Max</label>
+										<md-input v-model="scales[scaleType.key].max"></md-input>
+										<span class="md-suffix" v-show="scaleType.suffix">{{scaleType.suffix}}</span>
+									</md-field>
+									</md-field>
+								</div>
+							</div>
+						</md-card-content>
+					</md-card>
+				</md-dialog-content>
+				<md-dialog-actions>
+					<md-button class="" @click="showScaleDialog = false">Cancel</md-button>
+					<md-button class="md-primary" @click="applyScaleSetting">OK</md-button>
 				</md-dialog-actions>
 			</md-dialog>
 
@@ -332,6 +394,7 @@
 				<md-dialog-title>Capture</md-dialog-title>
 				<md-dialog-content>
 					<canvas ref="capture" width="320" height="240" style="image-rendering: pixelated;"></canvas>
+					<md-progress-bar md-mode="indeterminate" v-show="capturing"></md-progress-bar>
 				</md-dialog-content>
 				<md-dialog-actions>
 					<md-button class="md-primary" v-show="!capturing" ref="downloadLink" download="nanovna.png" :href="captureDownloadHref"><md-icon>cloud_download</md-icon> Download</md-button>
@@ -360,6 +423,7 @@
 					<md-button class="" @click="showTDRDialog = false">Close</md-button>
 				</md-dialog-actions>
 			</md-dialog>
+
 			<md-dialog :md-active.async="showAboutDialog">
 				<md-dialog-title>About</md-dialog-title>
 				<md-dialog-content>

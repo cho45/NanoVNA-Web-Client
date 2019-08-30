@@ -111,12 +111,46 @@ new Vue({
 		traces: [
 		],
 
+		scaleTypes: [
+			{
+				key: 'dB',
+				label: 'dB',
+				suffix: 'dB',
+				yAxisID: 'y-axis-dB',
+			},
+			{
+				key: 'swr',
+				label: 'SWR',
+				suffix: '',
+				yAxisID: 'y-axis-swr',
+			},
+			{
+				key: 'phase',
+				label: 'Phase',
+				suffix: '\u00b0',
+				yAxisID: 'y-axis-phase',
+			},
+			{
+				key: 'z',
+				label: '\u03a9 (R/X/Z)',
+				suffix: '\u03a9',
+				yAxisID: 'y-axis-z',
+			},
+		],
+		scales: {
+			dB: { min: -80, max: 0 },
+			swr: { min: 1, max: 10 },
+			phase: { min: -270, max: 270 },
+			z: { min: -100, max: 100 },
+		},
+
 		showTraceDialog: false,
 		currentTraceSetting: {
 			show: true,
 			channel: 0,
 			format: 'smith'
 		},
+		showScaleDialog: false,
 
 		freqInputSelect: "start-stop",
 
@@ -133,11 +167,11 @@ new Vue({
 		calibrationRunning: false,
 		calibrationStep: "reset",
 
-		showSmithChart: true,
-		showFreqChart: false,
+		showSmithChart: false,
+		showFreqChart: true,
 		availableSmithChart: true,
 		availableFreqChart: true,
-		graphSelected: 'smith',
+		graphSelected: 'freq',
 
 		showTDRDialog: false,
 		velocityOfSignalPropagation: 70,
@@ -499,6 +533,19 @@ new Vue({
 			this.showTraceDialog = false;
 		},
 
+
+		applyScaleSetting: function () {
+			for (let {key, yAxisID} of this.scaleTypes) {
+				const scale = this.scales[key];
+				const axis = this.freqChart.options.scales.yAxes.find( (i) => i.id === yAxisID);
+				axis.ticks.min = +scale.min;
+				axis.ticks.max = +scale.max;
+			}
+			this.freqChart.update();
+			this.saveLastStateToLocalStorage();
+			this.showScaleDialog = false;
+		},
+
 		nameOfFormat: function (format) {
 			// XXX
 			return format.toUpperCase();
@@ -506,7 +553,8 @@ new Vue({
 
 		saveLastStateToLocalStorage: function () {
 			const saving = {
-				traces: this.traces
+				traces: this.traces,
+				scales: this.scales,
 			};
 			console.log('save to localStorage', saving);
 			localStorage.setItem('nanovna', JSON.stringify(saving));
@@ -525,10 +573,14 @@ new Vue({
 			if (saved.traces) {
 				this.traces = saved.traces;
 			}
+			if (saved.scales) {
+				this.scales = saved.scales;
+				this.applyScaleSetting();
+			}
 		}
 	},
 
-	created: async function () {
+	mounted: async function () {
 		this.colorGen = colorGen();
 
 		this.backend = await new Backend();
@@ -657,7 +709,6 @@ new Vue({
 			}
 		});
 
-
 		this.traces = [
 			{
 				show: true,
@@ -679,10 +730,6 @@ new Vue({
 			},
 		];
 
-		this.loadLastStateFromLocalStorage();
-	},
-
-	mounted: async function () {
 		
 
 		this.smithChart = new Chart(this.$refs.smith.getContext('2d'), {
@@ -802,13 +849,13 @@ new Vue({
 								display: false,
 								labelString: "frequency"
 							},
-							afterFit: (scale) => scale.height = 50,
+							afterFit: (scale) => scale.height = 70,
 						}
 					],
 					yAxes: [
 						{
 							id: 'y-axis-dB',
-							display: true,
+							display: false,
 							type: 'linear',
 							ticks: {
 								min: -80.0,
@@ -818,11 +865,14 @@ new Vue({
 							scaleLabel: {
 								display: false,
 								labelString: "mag [dB]"
+							},
+							gridLines: {
+								drawOnChartArea: false,
 							}
 						},
 						{
 							id: 'y-axis-swr',
-							display: true,
+							display: false,
 							type: 'linear',
 							ticks: {
 								min: 1.0,
@@ -883,6 +933,8 @@ new Vue({
 				]
 			}
 		});
+
+		this.loadLastStateFromLocalStorage();
 
 		console.log(this);
 		this.$el.style.visibility = 'visible';
