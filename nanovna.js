@@ -44,11 +44,21 @@ class NanoVNA {
 		console.log(device.configurations);
 
 		console.log('open device', device);
-		await device.open();
+		try {
+			await device.open();
+		} catch (e) {
+			console.log(e);
+			throw new Error("failed to open device");
+		}
 		await device.selectConfiguration(1);
 		console.log('claimInterface');
-		// await device.claimInterface(COMMUNICATION_CLASS_INTERFACE);
-		await device.claimInterface(DATA_CLASS_INTERFACE);
+		try {
+			// await device.claimInterface(COMMUNICATION_CLASS_INTERFACE);
+			await device.claimInterface(DATA_CLASS_INTERFACE);
+		} catch (e) {
+			console.log(e);
+			throw new Error('failed to claim interface');
+		}
 		console.log('device was opened');
 
 		this.device = device;
@@ -97,7 +107,7 @@ class NanoVNA {
 
 	async startReaderThread(callback) {
 		if (this.readerThread) {
-			throw "already started";
+			throw new Error("already started");
 		}
 
 		const transfer = async (resolve) => {
@@ -214,7 +224,7 @@ class NanoVNA {
 
 	async sendCommand(cmd, postProcess) {
 		if (!this.initialized) {
-			throw "device is not initialized";
+			throw new Error("device is not initialized");
 		}
 
 		const lastCommand = this.lastCommand;

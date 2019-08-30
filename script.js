@@ -218,13 +218,18 @@ new Vue({
 				window.Backend = this.backend;
 
 				this.status = 'connecting'
-				const connected = await this.backend.open({
-					vendorId: device.vendorId,
-					productId: device.productId,
-					serialNumber: device.serialNumber,
-				});
+				let connected = false;
+				try {
+					connected = await this.backend.open({
+						vendorId: device.vendorId,
+						productId: device.productId,
+						serialNumber: device.serialNumber,
+					});
+				} catch (e) {
+					this.showSnackbar('failed to open: ' + e);
+				}
 				if (!connected) {
-					console.log('failed to open');
+					this.status = 'disconnected';
 					return;
 				}
 
@@ -577,6 +582,12 @@ new Vue({
 				this.scales = saved.scales;
 				this.applyScaleSetting();
 			}
+		},
+
+		showSnackbar: function (message) {
+			console.log('showSnackbar', message);
+			this.snackbar.message = message;
+			this.snackbar.show = true;
 		}
 	},
 
@@ -589,8 +600,8 @@ new Vue({
 				console.log('onerror', e);
 			},
 			ondisconnected:() => {
-				console.log('disconnected');
 				this.status = 'disconnected';
+				this.showSnackbar('Disconnected');
 			},
 		}));
 		const device = (await navigator.usb.getDevices())[0];
