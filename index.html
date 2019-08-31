@@ -182,9 +182,9 @@
 
 						<md-divider></md-divider>
 						<md-subheader>About</md-subheader>
-						<md-list-item @click="showAboutDialog = true">
+						<md-list-item @click="showAbout">
 							<md-icon>info</md-icon>
-							<span class="md-list-item-text">NanoVNA v{{deviceInfo.version || 'unknown'}}</span>
+							<span class="md-list-item-text">Version</span>
 						</md-list-item>
 					</md-list>
 				</md-app-drawer>
@@ -427,12 +427,32 @@
 			<md-dialog :md-active.async="showAboutDialog">
 				<md-dialog-title>About</md-dialog-title>
 				<md-dialog-content>
-					<p>
-					NanoVNA Device version: {{deviceInfo.version || 'unknown'}}
-					</p>
-					<p>
-					<a href="https://github.com/cho45/NanoVNA-WebUSB-Client">NanoVNA WebUSB Client</a>
-					</p>
+					<md-table>
+						<md-table-row>
+							<md-table-head></md-table-head>
+							<md-table-head>Version</md-table-head>
+							<md-table-head>Link</md-table-head>
+						</md-table-row>
+						<md-table-row>
+							<md-table-head>Device</md-table-head>
+							<md-table-cell>
+								{{deviceInfo.version || 'unknown'}}
+							</md-table-cell>
+							<md-table-cell>
+								<a href="https://github.com/ttrftech/NanoVNA">NanoVNA</a>,
+								<a href="https://github.com/hugen79/NanoVNA-H">NanoVNA-H</a>
+							</md-table-cell>
+						</md-table-row>
+						<md-table-row>
+							<md-table-head>Web</md-table-head>
+							<md-table-cell>
+								{{ webVersion || 'unknown' }}
+							</md-table-cell>
+							<md-table-cell>
+								<a href="https://github.com/cho45/NanoVNA-WebUSB-Client">NanoVNA WebUSB Client</a>
+							</md-table-cell>
+						</md-table-row>
+					</md-table>
 				</md-dialog-content>
 				<md-dialog-actions>
 					<md-button class="" @click="showAboutDialog = false">Close</md-button>

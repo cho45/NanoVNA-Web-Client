@@ -201,6 +201,7 @@ new Vue({
 		deviceInfo: {
 			version: null
 		},
+		webVersion: "",
 
 		autoUpdate: 1000,
 
@@ -598,6 +599,11 @@ new Vue({
 				this.scales = saved.scales;
 				this.applyScaleSetting();
 			}
+		},
+
+		showAbout: async function () {
+			this.showAboutDialog = true;
+			this.webVersion = (await (await fetch('.git/refs/heads/master')).text()).substring(0, 7);
 		},
 
 		showSnackbar: function (message) {

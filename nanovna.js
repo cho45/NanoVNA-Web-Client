@@ -296,7 +296,6 @@ class NanoVNA {
 	 */
 	async getData(s) {
 		const data = await this.sendCommand(`data ${s}\r`, async () => await this.getMultiline());
-		// console.log(data);
 
 		const nums = data.split(/\s+/);
 		const ret = [];
