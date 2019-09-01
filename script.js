@@ -272,10 +272,10 @@ new Vue({
 				// freq range is changed
 				this.data.ch0 = [];
 				this.data.ch1 = [];
-				for (let dataset of this.freqChart.datasets) {
+				for (let dataset of this.freqChart.data.datasets) {
 					dataset.data = [];
 				}
-				for (let dataset of this.smithChart.datasets) {
+				for (let dataset of this.smithChart.data.datasets) {
 					dataset.data = [];
 				}
 			}
