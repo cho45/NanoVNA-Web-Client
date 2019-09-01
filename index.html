@@ -314,10 +314,10 @@
 						<md-select v-model="currentTraceSetting.type" name="traceType" id="traceType">
 							<md-option value="clear">Clear Write</md-option>
 							<md-option value="freeze">Freeze</md-option>
-							<md-option value="maxhold">Max Hold</md-option>
-							<md-option value="minhold">Min Hold</md-option>
-							<md-option value="videoavg">Video Average</md-option>
-							<md-option value="poweravg">Power Average</md-option>
+							<md-option value="maxhold" v-show="currentTraceSetting.format !== 'smith'">Max Hold</md-option>
+							<md-option value="minhold" v-show="currentTraceSetting.format !== 'smith'">Min Hold</md-option>
+							<md-option value="videoavg" v-show="currentTraceSetting.format !== 'smith'">Video Average</md-option>
+							<md-option value="poweravg" v-show="currentTraceSetting.format !== 'smith'">Power Average</md-option>
 						</md-select>
 					</md-field>
 					<md-field v-show="['videoavg', 'poweravg'].some(i => i === currentTraceSetting.type)">
