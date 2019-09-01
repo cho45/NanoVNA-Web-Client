@@ -324,6 +324,7 @@
 						<label>Average Count</label>
 						<md-input v-model="currentTraceSetting.avgCount" min="2" max="1000"></md-input>
 					</md-field>
+					<md-button class="md-primary" @click="currentTraceSetting.color = colorGen()">Change Color</md-button>
 				</md-dialog-content>
 				<md-dialog-actions>
 					<md-button class="md-accent" @click="deleteTrace" v-show="currentTraceSetting.src">Delete</md-button>
