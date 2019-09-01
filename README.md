@@ -11,13 +11,13 @@ https://cho45.stfuawsc.com/NanoVNA/
 
 # Requirements
 
-## Mac
+## macOS
 
 no requirements
 
 ## Android
 
-Connect device via USB OTG connector.
+Connect device via USB OTG connector. (Type-C to Type-C cable may not be usable. I recommend using USB-A OTG adapter.)
 
 ## Linux (Ubuntu)
 
