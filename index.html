@@ -243,9 +243,9 @@
 						</div>
 					</div>
 					<div style="display: flex; flex-direction: column; flex: 1">
-						<md-tabs md-alignment="fixed">
-							<md-tab @click="showFreqChart = false; showSmithChart = true" md-label="SMITH"></md-tab>
-							<md-tab @click="showSmithChart = false; showFreqChart = true" md-label="FREQ"></md-tab>
+						<md-tabs md-alignment="fixed" md-active-tab='freq'>
+							<md-tab id='smith' @click="showFreqChart = false; showSmithChart = true" md-label="SMITH"></md-tab>
+							<md-tab id='freq' @click="showSmithChart = false; showFreqChart = true" md-label="FREQ"></md-tab>
 						</md-tabs>
 						<div style="position: relative; flex: 1">
 							<div id="graph" class="" style="position: relative">
@@ -308,6 +308,21 @@
 							<md-option value="X">X (Reactance)</md-option>
 							<md-option value="Z">|Z| (Impedance)</md-option>
 						</md-select>
+					</md-field>
+					<md-field>
+						<label for="traceType">Trace Type</label>
+						<md-select v-model="currentTraceSetting.type" name="traceType" id="traceType">
+							<md-option value="clear">Clear Write</md-option>
+							<md-option value="freeze">Freeze</md-option>
+							<md-option value="maxhold">Max Hold</md-option>
+							<md-option value="minhold">Min Hold</md-option>
+							<md-option value="videoavg">Video Average</md-option>
+							<md-option value="poweravg">Power Average</md-option>
+						</md-select>
+					</md-field>
+					<md-field v-show="['videoavg', 'poweravg'].some(i => i === currentTraceSetting.type)">
+						<label>Average Count</label>
+						<md-input v-model="currentTraceSetting.avgCount" min="2" max="1000"></md-input>
 					</md-field>
 				</md-dialog-content>
 				<md-dialog-actions>

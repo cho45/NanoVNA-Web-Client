@@ -164,7 +164,8 @@ new Vue({
 		currentTraceSetting: {
 			show: true,
 			channel: 0,
-			format: 'smith'
+			format: 'smith',
+			type: 'clear',
 		},
 		showScaleDialog: false,
 
@@ -193,6 +194,7 @@ new Vue({
 		velocityOfSignalPropagation: 70,
 		peakTDR: 0,
 
+		freqs: [],
 		data: {
 			ch0: [],
 			ch1: []
@@ -265,6 +267,20 @@ new Vue({
 		update: async function () {
 			this.updating = true;
 			const freqs = await this.backend.getFrequencies();
+			if (this.freqs.some( (v, i) => freqs[i] !== v )) {
+				this.showSnackbar('Frequency range is changed');
+				// freq range is changed
+				this.data.ch0 = [];
+				this.data.ch1 = [];
+				for (let dataset of this.freqChart.datasets) {
+					dataset.data = [];
+				}
+				for (let dataset of this.smithChart.datasets) {
+					dataset.data = [];
+				}
+			}
+			this.freqs = freqs;
+
 			const start = freqs[0], stop = freqs[freqs.length-1];
 			const span   = stop - start;
 			const center = span / 2 + start;
@@ -275,20 +291,24 @@ new Vue({
 			this.range.center = center / 1e6;
 
 			const measured0 = await this.backend.getData(0);
-
-			this.data.ch0 = measured0.map( (complex, i) => ({
+			this.data.ch0.unshift(measured0.map( (complex, i) => ({
 				freq: freqs[i],
 				real: complex[0],
 				imag: complex[1],
-			}));
+			})));
 
 			const measured1 = await this.backend.getData(1);
-			this.data.ch1 = measured1.map( (complex, i) => ({
+			this.data.ch1.unshift(measured1.map( (complex, i) => ({
 				freq: freqs[i],
 				real: complex[0],
 				imag: complex[1],
-			}));
+			})));
 			this.updating = false;
+
+			const maxAvgCount = Math.max(...this.traces.map( (i) => i.avgCount || 0 )) || 1;
+			console.log(this.data);
+			this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
+			this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
 
 			if (this.autoUpdate) {
 				this.autoUpdateTimer = setTimeout(() => {
@@ -312,7 +332,7 @@ new Vue({
 			if (format === 's1p') {
 				const body = [];
 				body.push('# Hz S RI R 50\n');
-				this.data.ch0.forEach( (d) => {
+				this.data.ch0[0].forEach( (d) => {
 					body.push(`${d.freq}\t${d.real}\t${d.imag}\n`);
 				});
 				const blob = new Blob(body, { type: 'application/octet-stream' });
@@ -325,8 +345,8 @@ new Vue({
 			if (format === 's2p') {
 				const body = [];
 				body.push('# Hz S RI R 50\n');
-				this.data.ch0.forEach( (ch0, i) => {
-					const ch1 = this.data.ch1[i];
+				this.data.ch0[0].forEach( (ch0, i) => {
+					const ch1 = this.data.ch1[0][i];
 					// XXX treat S12 == S21, S22 = S11
 					body.push(`${ch0.freq}\t${ch0.real}\t${ch0.imag}\t${ch1.real}\t${ch1.imag}\t${ch1.real}\t${ch1.imag}\t${ch0.real}\t${ch0.imag}\n`);
 				});
@@ -522,6 +542,12 @@ new Vue({
 
 		editTrace: function (trace) {
 			this.currentTraceSetting = Object.assign({ src: trace }, trace);
+			if (!this.currentTraceSetting.type) {
+				this.currentTraceSetting.type = 'clear';
+			}
+			if (!this.currentTraceSetting.avgCount) {
+				this.currentTraceSetting.avgCount = 100;
+			}
 			this.showTraceDialog = true;
 		},
 
@@ -530,6 +556,8 @@ new Vue({
 				show: true,
 				channel: 0,
 				format: 'logmag',
+				type: 'clear',
+				avgCount: 100,
 				color: this.colorGen()
 			};
 			this.showTraceDialog = true;
@@ -673,11 +701,13 @@ new Vue({
 
 		const updateFunctions = [];
 		const updateGraph = () => {
-			for (let update of updateFunctions) {
-				update();
+			if (this.data.ch0.length && this.data.ch1.length) {
+				for (let update of updateFunctions) {
+					update();
+				}
 			}
 
-			this.freqChart.data.labels = this.data.ch0.map(i => i.freq);
+			this.freqChart.data.labels = this.freqs;
 			this.smithChart.update();
 			this.freqChart.update();
 		}
@@ -717,9 +747,51 @@ new Vue({
 					yAxisID: yAxisID
 				});
 
-				updateFunctions.push(() => {
-					chart.data.datasets[n].data = this.data[`ch${trace.channel}`].map(func);
-				});
+				updateFunctions.push({
+					clear: () => {
+						chart.data.datasets[n].data = this.data[`ch${trace.channel}`][0].map(func);
+					},
+					freeze: () => {
+						if (chart.data.datasets[n].data.length) {
+							return;
+						}
+						chart.data.datasets[n].data = this.data[`ch${trace.channel}`][0].map(func);
+					},
+					maxhold: () => {
+						const vals = this.data[`ch${trace.channel}`][0].map(func);
+						const data = chart.data.datasets[n].data;
+						chart.data.datasets[n].data = vals.map( (v, i) =>  Math.max(v, data[i] || Number.NEGATIVE_INFINITY) );
+					},
+					minhold: () => {
+						const vals = this.data[`ch${trace.channel}`][0].map(func);
+						const data = chart.data.datasets[n].data;
+						chart.data.datasets[n].data = vals.map( (v, i) =>  Math.min(v, data[i] || Number.POSITIVE_INFINITY) );
+					},
+					videoavg: () => {
+						const target = this.data[`ch${trace.channel}`].slice(0, trace.avgCount || 2);
+						const vals = target.
+							map( d => d.map(func) ).
+							reduce( (r, o) => r.map( (v, i) => v + o[i]) ).
+							map( v => v / target.length );
+						chart.data.datasets[n].data = vals;
+					},
+					poweravg: () => {
+						const target = this.data[`ch${trace.channel}`].slice(0, trace.avgCount || 2);
+						if (trace.format === 'logmag') {
+							const vals = target.
+								map( d => d.map( (n) => Math.pow(10, func(n) / 10) ) ).
+								reduce( (r, o) => r.map( (v, i) => v + o[i]) ).
+								map( v => Math.log10(v / target.length) * 10 );
+							chart.data.datasets[n].data = vals;
+						} else {
+							const vals = target.
+								map( d => d.map(func) ).
+								reduce( (r, o) => r.map( (v, i) => v + o[i]) ).
+								map( v => v / target.length );
+							chart.data.datasets[n].data = vals;
+						}
+					}
+				}[trace.type || 'clear']);
 			}
 
 			this.availableSmithChart = !!this.smithChart.data.datasets.length;
