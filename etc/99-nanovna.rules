@@ -1,0 +1,2 @@
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="5740", GROUP="plugdev", MODE="0660",  RUN="/bin/sh -c '/bin/echo -n $kernel:1.0 | /usr/bin/tee /sys/bus/usb/drivers/cdc_acm/unbind | /usr/bin/logger -t nanovna'"
+

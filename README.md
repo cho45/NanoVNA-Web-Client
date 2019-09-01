@@ -9,6 +9,27 @@ https://cho45.stfuawsc.com/NanoVNA/
 
 # Usage
 
+# Requirements
+
+## Mac
+
+no requirements
+
+## Android
+
+Connect device via USB OTG connector.
+
+## Linux (Ubuntu)
+
+Copy <a href="./etc/99-nanovna.rules">99-nanovna.rules</a> to your /etc/udev/rules.d.
+
+BE CAREFUL: This rule disables `cdc_acm` driver for all STM32CDC devices (vid:0x0483, pid:0x5740). So, If you want to use device as usb cdc device, you must remove this file again.
+
+## Windows
+
+Replace driver with <a href="https://zadig.akeo.ie/">Zadig</a>.
+
+# RUN
 There are no requirements except a browser supporting WebUSB (available by default with Google Chrome currently)
 
 1. Access to https://cho45.stfuawsc.com/NanoVNA/ .
