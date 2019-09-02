@@ -145,6 +145,10 @@ class Worker {
 		};
 	}
 
+	async getInfo() {
+		return await this.nanovna.getInfo();
+	}
+
 	hello() {
 		console.log('hello');
 	}

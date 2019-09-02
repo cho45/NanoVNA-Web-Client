@@ -201,7 +201,8 @@ new Vue({
 		},
 
 		deviceInfo: {
-			version: null
+			version: null,
+			info: '',
 		},
 		webVersion: "",
 
@@ -632,6 +633,7 @@ new Vue({
 		showAbout: async function () {
 			this.showAboutDialog = true;
 			this.webVersion = (await (await fetch('.git/refs/heads/master')).text()).substring(0, 7);
+			this.deviceInfo.info = await this.backend.getInfo();
 		},
 
 		showSnackbar: function (message) {

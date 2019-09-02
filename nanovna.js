@@ -362,5 +362,9 @@ class NanoVNA {
 	async doSave(n) {
 		await this.sendCommand(`save ${n}\r`);
 	}
+
+	async getInfo() {
+		return await this.sendCommand(`info\r`, async () => await this.getMultiline());
+	}
 }
 
