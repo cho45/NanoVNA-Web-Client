@@ -340,7 +340,7 @@ new Vue({
 				const url = URL.createObjectURL(blob);
 				const a = document.createElement('a');
 				a.href = url;
-				a.download = 'nanovna.s1p';
+				a.download = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s1p`;
 				a.click();
 			} else
 			if (format === 's2p') {
@@ -355,7 +355,7 @@ new Vue({
 				const url = URL.createObjectURL(blob);
 				const a = document.createElement('a');
 				a.href = url;
-				a.download = 'nanovna.s2p';
+				a.download = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s2p`;
 				a.click();
 			} else {
 				alert('not implemented');
@@ -368,7 +368,7 @@ new Vue({
 				const url = URL.createObjectURL(blob);
 				const a = document.createElement('a');
 				a.href = url;
-				a.download = this.graph + '.png';
+				a.download = this.graph + `-${strftime('%Y%m%d-%H%M%S')}.png`;
 				a.click();
 			});
 		},
