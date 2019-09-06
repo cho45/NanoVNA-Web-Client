@@ -312,11 +312,12 @@ class NanoVNA {
 		}
 		const data = await this.sendCommand(`dump 0\r`, async () => await this.getMultiline());
 		const nums = data.split(/\s+/);
-		const ret = [];
+		const ref = [], samp = [];
 		for (var i = 0, len = nums.length; i < len; i += 2) {
-			ret.push([+nums[i+0], +nums[i+1]]);
+			ref.push(+nums[i+0]);
+			samp.push(+nums[i+1]);
 		}
-		return ret;
+		return [ret, samp];
 	}
 
 	async resume() {

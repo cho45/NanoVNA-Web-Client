@@ -27,6 +27,7 @@ const lib = {};
 })();
 
 const FFT_SIZE = 1024;
+const AUDIO_BUFFER_LEN = 96;
 
 class Worker {
 	constructor() {
@@ -112,12 +113,18 @@ class Worker {
 
 	async calcTDR() {
 		const windowFunction = (x) => {
+			return 1;
+			/*
 			// blackman window
 			const alpha = 0.16;
 			const a0 = (1.0 - alpha) / 2.0;
 			const a1 = 1.0 / 2.0;
 			const a2 = alpha / 2.0;
 			return  a0 - a1 * Math.cos(2 * Math.PI * x) + a2 * Math.cos(4 * Math.PI * x);
+			*/
+
+			// hamming window
+			return 0.54 - 0.46 * Math.cos(Math.PI * 2 * x);
 		};
 
 		const freqs = await this.getFrequencies();
@@ -133,20 +140,32 @@ class Worker {
 		input.set(data.flat());
 
 		console.log(input);
-		const output = new Float32Array(FFT_SIZE);
+		const output = new Float32Array(FFT_SIZE * 2);
 
-		this.FFT.ifft_abs(input, output);
+		this.FFT.ifft(input, output);
 
 		const frequencyStep = 1 / (freqs[1] - freqs[0]);
 		const timeAxis = new Float32Array(FFT_SIZE).map( (_, i) => frequencyStep/(FFT_SIZE-1)*i)
 		return {
-			mag: output,
+			complex: output,
 			time: timeAxis,
 		};
 	}
 
 	async getInfo() {
 		return await this.nanovna.getInfo();
+	}
+
+	async calcCoeffsByFreqs(port, freqs) {
+		await this.nanovna.setPort(port);
+		const REF_LEVEL = (1<<9);
+		const input = new Float32Array(AUDIO_BUFFER_LEN * 2);
+		const output = new Float32Array(AUDIO_BUFFER_LEN * 2);
+		for (let freq of freqs) {
+			const [ref, samp] = await this.nanovna.getRawWave(freq);
+			input.set(ref);
+			this.DSP0.analytic_signal(input, output);
+		}
 	}
 
 	hello() {

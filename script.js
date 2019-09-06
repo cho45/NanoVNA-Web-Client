@@ -440,7 +440,7 @@ new Vue({
 						responsive: true,
 						maintainAspectRatio: false,
 						legend: {
-							display: false,
+							display: true,
 							position: 'top',
 							padding: 0
 						},
@@ -496,13 +496,28 @@ new Vue({
 							],
 							yAxes: [
 								{
+									id: 'impulse',
 									display: true,
 									type: 'linear',
+									position: 'right',
 									ticks: {
 									},
 									scaleLabel: {
 										display: false,
-										labelString: "mag"
+										labelString: "impulse"
+									}
+								},
+								{
+									id: 'step',
+									display: true,
+									type: 'linear',
+									ticks: {
+										min: -1,
+										max: +1
+									},
+									scaleLabel: {
+										display: true,
+										labelString: "step"
 									}
 								},
 							]
@@ -512,12 +527,17 @@ new Vue({
 						labels: [],
 						datasets: [
 							{
-								label: `CH0 TDR`,
+								label: `CH0 TDR Impulse`,
 								fill: false,
-								/*
-								borderColor: trace.color,
-								backgroundColor: trace.color,
-								*/
+								yAxisID: 'impulse',
+								borderColor: this.colorGen(),
+								data: [],
+							},
+							{
+								label: `CH0 TDR Step`,
+								fill: false,
+								yAxisID: 'step',
+								borderColor: this.colorGen(),
 								data: [],
 							}
 						]
@@ -533,11 +553,18 @@ new Vue({
 			console.log({velocityOfSignalPropagation});
 
 			const distances = Array.from(tdr.time.map( (i) => i * SPEED_OF_LIGHT / 2));
-			console.log(Math.max(...tdr.mag));
-			this.peakTDR = distances[tdr.mag.indexOf(Math.max(...tdr.mag))];
+			const real = tdr.complex.filter( (_, i) => (i % 2) === 0);
+			const imag = tdr.complex.filter( (_, i) => (i % 2) === 1);
+			const mag   = real.map( (r, i) => Math.hypot(r, imag[i]) );
+
+			this.peakTDR = distances[mag.indexOf(Math.max(...mag))];
 
 			this.TDRChart.data.labels = distances;
-			this.TDRChart.data.datasets[0].data = Array.from(tdr.mag);
+			this.TDRChart.data.datasets[0].data = mag;
+			this.TDRChart.data.datasets[1].data = real.reduce( (r, v, i) => {
+				r.push(i === 0 ? v : r[i - 1] + v);
+				return r;
+			}, []);
 			this.TDRChart.update();
 		},
 

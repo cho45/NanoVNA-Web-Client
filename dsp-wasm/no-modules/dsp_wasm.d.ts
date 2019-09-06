@@ -27,6 +27,16 @@ export class FFT {
 * @param {Float32Array} output_ 
 */
   ifft_abs(input_: Float32Array, output_: Float32Array): void;
+/**
+* @param {Float32Array} input_ 
+* @param {Float32Array} output_ 
+*/
+  ifft_real(input_: Float32Array, output_: Float32Array): void;
+/**
+* @param {Float32Array} input_ 
+* @param {Float32Array} output_ 
+*/
+  analytic_signal(input_: Float32Array, output_: Float32Array): void;
 }
 
 /**
