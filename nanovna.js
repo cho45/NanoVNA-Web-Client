@@ -28,8 +28,18 @@ const USBD1_DATA_REQUEST_EP = 1;
 const USBD1_DATA_AVAILABLE_EP = 1;
 
 const REF_LEVEL = (1<<9);
+const AUDIO_BUFFER_LEN = 96;
+const DUMP_BUFFER_LEN = AUDIO_BUFFER_LEN / 2;
 
 class NanoVNA {
+	static get AUDIO_BUFFER_LEN() {
+		return AUDIO_BUFFER_LEN;
+	}
+
+	static get DUMP_BUFFER_LEN() {
+		return DUMP_BUFFER_LEN;
+	}
+
 	constructor(opts) {
 		this.initialized = false;
 		this.callbacks = [];
@@ -261,6 +271,7 @@ class NanoVNA {
 	}
 
 	async setFrequency(freq) {
+		console.log('setFrequency', freq);
 		await this.sendCommand(`freq ${freq}\r`);
 	}
 
@@ -305,19 +316,19 @@ class NanoVNA {
 		return ret;
 	}
 
-	async getRawWave(s, freq) {
+	async getRawWave(freq) {
 		if (freq) {
 			await this.setFrequency(freq);
-			await this.wait(0.05);
+			await this.wait(0.002);
 		}
 		const data = await this.sendCommand(`dump 0\r`, async () => await this.getMultiline());
 		const nums = data.split(/\s+/);
-		const ref = [], samp = [];
-		for (var i = 0, len = nums.length; i < len; i += 2) {
-			ref.push(+nums[i+0]);
-			samp.push(+nums[i+1]);
+		const ref = new Int16Array(DUMP_BUFFER_LEN), samp = new Int16Array(DUMP_BUFFER_LEN);
+		for (var i = 0; i < DUMP_BUFFER_LEN; i++) {
+			ref[i]  = parseInt(nums[i*2+0], 16);
+			samp[i] = parseInt(nums[i*2+1], 16);
 		}
-		return [ret, samp];
+		return [ref, samp];
 	}
 
 	async resume() {

@@ -25,6 +25,33 @@
         return ptr;
     }
 
+    let cachegetUint16Memory = null;
+    function getUint16Memory() {
+        if (cachegetUint16Memory === null || cachegetUint16Memory.buffer !== wasm.memory.buffer) {
+            cachegetUint16Memory = new Uint16Array(wasm.memory.buffer);
+        }
+        return cachegetUint16Memory;
+    }
+
+    function passArray16ToWasm(arg) {
+        const ptr = wasm.__wbindgen_malloc(arg.length * 2);
+        getUint16Memory().set(arg, ptr / 2);
+        WASM_VECTOR_LEN = arg.length;
+        return ptr;
+    }
+
+    let cachegetInt32Memory = null;
+    function getInt32Memory() {
+        if (cachegetInt32Memory === null || cachegetInt32Memory.buffer !== wasm.memory.buffer) {
+            cachegetInt32Memory = new Int32Array(wasm.memory.buffer);
+        }
+        return cachegetInt32Memory;
+    }
+
+    function getArrayF32FromWasm(ptr, len) {
+        return getFloat32Memory().subarray(ptr / 4, ptr / 4 + len);
+    }
+
     const heap = new Array(32);
 
     heap.fill(undefined);
@@ -109,14 +136,6 @@ if (typeof cachedTextEncoder.encodeInto === 'function') {
     };
 }
 
-let cachegetInt32Memory = null;
-function getInt32Memory() {
-    if (cachegetInt32Memory === null || cachegetInt32Memory.buffer !== wasm.memory.buffer) {
-        cachegetInt32Memory = new Int32Array(wasm.memory.buffer);
-    }
-    return cachegetInt32Memory;
-}
-
 let cachedTextDecoder = new TextDecoder('utf-8');
 
 function getStringFromWasm(ptr, len) {
@@ -134,6 +153,46 @@ function takeObject(idx) {
     dropObject(idx);
     return ret;
 }
+/**
+*/
+class DSP {
+
+    static __wrap(ptr) {
+        const obj = Object.create(DSP.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    free() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        wasm.__wbg_dsp_free(ptr);
+    }
+    /**
+    * @param {number} n
+    * @returns {DSP}
+    */
+    constructor(n) {
+        const ret = wasm.dsp_new(n);
+        return DSP.__wrap(ret);
+    }
+    /**
+    * @param {Int16Array} refr
+    * @param {Int16Array} samp
+    * @returns {Float32Array}
+    */
+    calc_reflect_coeff_from_rawave(refr, samp) {
+        const retptr = 8;
+        const ret = wasm.dsp_calc_reflect_coeff_from_rawave(retptr, this.ptr, passArray16ToWasm(refr), WASM_VECTOR_LEN, passArray16ToWasm(samp), WASM_VECTOR_LEN);
+        const memi32 = getInt32Memory();
+        const v0 = getArrayF32FromWasm(memi32[retptr / 4 + 0], memi32[retptr / 4 + 1]).slice();
+        wasm.__wbindgen_free(memi32[retptr / 4 + 0], memi32[retptr / 4 + 1] * 4);
+        return v0;
+    }
+}
+__exports.DSP = DSP;
 /**
 */
 class FFT {

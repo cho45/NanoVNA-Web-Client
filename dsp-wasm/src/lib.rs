@@ -168,3 +168,73 @@ impl FFT {
         }
     }
 }
+
+#[wasm_bindgen]
+pub struct DSP {
+    n: usize,
+    fft: std::sync::Arc<dyn rustfft::FFT<f32>>,
+    ifft: std::sync::Arc<dyn rustfft::FFT<f32>>,
+}
+
+#[wasm_bindgen]
+impl DSP {
+    #[allow(clippy::new_without_default)]
+    #[wasm_bindgen(constructor)]
+    pub fn new(n: usize) -> Self {
+        let fft = FFTplanner::new(false).plan_fft(n);
+        let ifft = FFTplanner::new(true).plan_fft(n);
+        DSP { n, fft, ifft }
+    }
+
+    pub fn calc_reflect_coeff_from_rawave(&self, refr: &[i16], samp: &[i16]) -> Box<[f32]> {
+        //        log(&format!("DSP: {:?}", self.n));
+        //        log(&format!("refr: {:?}", refr));
+        //        log(&format!("samp: {:?}", samp));
+
+        let mut input: Vec<Complex<f32>> = vec![Complex::zero(); self.n];
+        let mut output: Vec<Complex<f32>> = vec![Complex::zero(); self.n];
+        input.resize(self.n, Complex::zero());
+        output.resize(self.n, Complex::zero());
+
+        // compute analytic signal
+
+        for i in 0..self.n {
+            input[i].re = refr[i] as f32;
+        }
+
+        //        log(&format!("input: {:?} {:?}", input.len(), input));
+
+        self.fft.process(&mut input, &mut output);
+        let half_n = self.n / 2;
+        for i in 0..self.n {
+            input[i] = if i == 0 || i == half_n {
+                output[i]
+            } else if 1 < i && i < half_n {
+                output[i] * 2.0
+            } else {
+                Complex::zero()
+            }
+        }
+
+        self.ifft.process(&mut input, &mut output);
+
+        let n = self.n as f32;
+        for i in output.iter_mut() {
+            *i /= n;
+        }
+        //        log(&format!("output: {:?}", output));
+
+        const REF_LEVEL: f32 = (1 << 9) as f32;
+
+        let ret: Complex<f32> = output
+            .into_iter()
+            .enumerate()
+            .map(|(index, refh)| (refh * (samp[index] as f32)) / refh.norm() / REF_LEVEL)
+            .fold(Complex::zero(), |r, i| r + i)
+            / (self.n as f32);
+
+        //        log(&format!("re: {:?}", ret));
+
+        return vec![ret.re, ret.im].into_boxed_slice();
+    }
+}

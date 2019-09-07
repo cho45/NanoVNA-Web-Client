@@ -256,6 +256,14 @@ new Vue({
 				this.deviceInfo.version = await this.backend.getVersion();
 				this.status = 'connected';
 
+				const start = 50e3;
+				const stop  = 900e6;
+				const points = 101;
+				const step = (stop - start) / (points - 1);
+				const frequencies =  new Uint32Array(points).map( (_, i) => step*i+start);
+				console.log(frequencies);
+				this.backend.frequencies = frequencies;
+				
 				this.update();
 			}
 		},
