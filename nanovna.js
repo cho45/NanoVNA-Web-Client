@@ -364,6 +364,10 @@ class NanoVNA {
 		await this.sendCommand(`save ${n}\r`);
 	}
 
+	async enterDFU() {
+		await this.sendCommand(`reset dfu\r`);
+	}
+
 	async getInfo() {
 		return await this.sendCommand(`info\r`, async () => await this.getMultiline());
 	}
