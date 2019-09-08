@@ -4,6 +4,22 @@
 export function set_panic_hook(): void;
 /**
 */
+export class DSP {
+  free(): void;
+/**
+* @param {number} n 
+* @returns {DSP} 
+*/
+  constructor(n: number);
+/**
+* @param {Int16Array} refr 
+* @param {Int16Array} samp 
+* @returns {Float32Array} 
+*/
+  calc_reflect_coeff_from_rawave(refr: Int16Array, samp: Int16Array): Float32Array;
+}
+/**
+*/
 export class FFT {
   free(): void;
 /**
