@@ -157,14 +157,6 @@
 
 						<md-divider></md-divider>
 
-						<md-subheader>Etc</md-subheader>
-						<md-list-item @click="calcTDR" :disabled="!connected">
-							<md-icon>import_export</md-icon>
-							<span class="md-list-item-text">TDR</span>
-						</md-list-item>
-
-						<md-divider></md-divider>
-
 						<md-subheader>State</md-subheader>
 						<!--
 						<md-list-item @click="test" :disabled="!connected">
@@ -244,14 +236,24 @@
 						</div>
 					</div>
 					<div style="display: flex; flex-direction: column; flex: 1">
-						<md-tabs md-alignment="fixed" md-active-tab='freq'>
-							<md-tab id='smith' @click="showFreqChart = false; showSmithChart = true" md-label="SMITH"></md-tab>
-							<md-tab id='freq' @click="showSmithChart = false; showFreqChart = true" md-label="FREQ"></md-tab>
+						<md-tabs md-alignment="fixed" :md-active-tab='graphSelected' v-on:md-changed="tabChanged">
+							<md-tab id='smith' md-label="SMITH"></md-tab>
+							<md-tab id='freq'  md-label="FREQ"></md-tab>
+							<md-tab id='tdr'  md-label="TDR"></md-tab>
 						</md-tabs>
 						<div style="position: relative; flex: 1">
 							<div id="graph" class="" style="position: relative">
 								<canvas ref="smith" id="smith" width="800" height="800" v-show="availableSmithChart && showSmithChart"></canvas>
-								<canvas ref="freq" id="freq" width="800" height="800" v-show="availableFreqChart && showFreqChart" style=""></canvas>
+								<canvas ref="freq" id="freq" width="800" height="800" v-show="availableFreqChart && showFreqChart"></canvas>
+								<canvas ref="TDR" id="tdr" width="800" height="800" v-show="showTDRChart"></canvas>
+								<div v-show="showTDRChart" style="position: absolute; top: 25px; right: 60px; background: rgba(255, 255, 255, 80%)">
+									<div>Peak: {{peakTDR * (velocityOfSignalPropagation / 100)}}m</div>
+									<md-field class="" style="width: 200px; margin: 0 0 0 auto">
+										<label>Velocity of signal propagation</label>
+										<md-input type="number" min="0" max="100" step="1" v-model="velocityOfSignalPropagation"></md-input>
+										<span class="md-suffix">%</span>
+									</md-field>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -417,27 +419,6 @@
 					<md-button class="md-primary" v-show="!capturing" ref="downloadLink" download="nanovna.png" :href="captureDownloadHref"><md-icon>cloud_download</md-icon> Download</md-button>
 					<md-button class="md-accent" v-show="!capturing" @click="capture"><md-icon>refresh</md-icon> Recapture</md-button>
 					<md-button class="" @click="showCaptureDialog = false">Close</md-button>
-				</md-dialog-actions>
-			</md-dialog>
-
-			<md-dialog :md-active.async="showTDRDialog">
-				<md-dialog-title>TDR</md-dialog-title>
-				<md-dialog-content>
-					<div style="width: 100%; height: 480px">
-						<canvas ref="TDR" width="640" height="480" style="image-rendering: pixelated;"></canvas>
-					</div>
-					<div style="position: relative">
-						<div>Peak: {{peakTDR * (velocityOfSignalPropagation / 100)}}m</div>
-						<md-field class="" style="width: 200px; margin: 0 0 0 auto">
-							<label>Velocity of signal propagation</label>
-							<md-input type="number" min="0" max="100" step="1" v-model="velocityOfSignalPropagation"></md-input>
-							<span class="md-suffix">%</span>
-						</md-field>
-					</div>
-				</md-dialog-content>
-				<md-dialog-actions>
-					<md-button class="md-accent" v-show="!capturing" @click="calcTDR"><md-icon>refresh</md-icon> Recalculate</md-button>
-					<md-button class="" @click="showTDRDialog = false">Close</md-button>
 				</md-dialog-actions>
 			</md-dialog>
 

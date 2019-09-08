@@ -184,13 +184,10 @@ new Vue({
 		calibrationRunning: false,
 		calibrationStep: "reset",
 
-		showSmithChart: false,
-		showFreqChart: true,
 		availableSmithChart: true,
 		availableFreqChart: true,
-		graphSelected: 'freq',
+		graphSelected: 'tdr',
 
-		showTDRDialog: false,
 		velocityOfSignalPropagation: 70,
 		peakTDR: 0,
 
@@ -218,6 +215,18 @@ new Vue({
 	},
 
 	computed: {
+		showSmithChart: function () {
+			return this.graphSelected === 'smith';
+		},
+
+		showFreqChart: function () {
+			return this.graphSelected === 'freq';
+		},
+
+		showTDRChart: function () {
+			return this.graphSelected === 'tdr';
+		},
+
 		connected: function () {
 			return this.status === 'connected';
 		},
@@ -229,6 +238,10 @@ new Vue({
 
 	methods: {
 		test: function () {
+		},
+
+		tabChanged: function (e) {
+			this.graphSelected = e;
 		},
 
 		connect: async function (device0) {
@@ -320,6 +333,8 @@ new Vue({
 			console.log(this.data);
 			this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
 			this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
+
+			await this.calcTDR();
 
 			if (this.autoUpdate) {
 				this.autoUpdateTimer = setTimeout(() => {
@@ -440,9 +455,6 @@ new Vue({
 		},
 
 		calcTDR: async function () {
-			this.showTDRDialog = true;
-			await Promise.resolve();
-
 			if (!this.TDRChart || this.TDRChart.canvas !== this.$refs.TDR) {
 				this.TDRChart = new Chart(this.$refs.TDR.getContext('2d'), {
 					type: 'line',
@@ -509,21 +521,22 @@ new Vue({
 									id: 'impulse',
 									display: true,
 									type: 'linear',
-									position: 'right',
+									position: 'left',
 									ticks: {
 									},
 									scaleLabel: {
-										display: false,
+										display: true,
 										labelString: "impulse"
 									}
 								},
 								{
 									id: 'step',
 									display: true,
+									position: 'right',
 									type: 'linear',
 									ticks: {
-										min: -1,
-										max: +1
+										min: -1.5,
+										max: +1.5
 									},
 									scaleLabel: {
 										display: true,
@@ -835,6 +848,7 @@ new Vue({
 
 			this.availableSmithChart = !!this.smithChart.data.datasets.length;
 			this.availableFreqChart  = !!this.freqChart.data.datasets.length;
+			console.log(this.availableSmithChart, this.availableFreqChart);
 
 			for (let yAxis of this.freqChart.options.scales.yAxes) {
 				yAxis.display = axisSet.has(yAxis.id);
