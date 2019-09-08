@@ -243,8 +243,8 @@
 						</md-tabs>
 						<div style="position: relative; flex: 1">
 							<div id="graph" class="" style="position: relative">
-								<canvas ref="smith" id="smith" width="800" height="800" v-show="availableSmithChart && showSmithChart"></canvas>
-								<canvas ref="freq" id="freq" width="800" height="800" v-show="availableFreqChart && showFreqChart"></canvas>
+								<canvas ref="smith" id="smith" width="800" height="800" v-show="showSmithChart"></canvas>
+								<canvas ref="freq" id="freq" width="800" height="800" v-show="showFreqChart"></canvas>
 								<canvas ref="TDR" id="tdr" width="800" height="800" v-show="showTDRChart"></canvas>
 								<div v-show="showTDRChart" style="position: absolute; top: 25px; right: 60px; background: rgba(255, 255, 255, 80%)">
 									<div>Peak: {{peakTDR * (velocityOfSignalPropagation / 100)}}m</div>

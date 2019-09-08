@@ -184,8 +184,6 @@ new Vue({
 		calibrationRunning: false,
 		calibrationStep: "reset",
 
-		availableSmithChart: true,
-		availableFreqChart: true,
 		graphSelected: 'tdr',
 
 		velocityOfSignalPropagation: 70,
@@ -334,8 +332,6 @@ new Vue({
 			this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
 			this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
 
-			await this.calcTDR();
-
 			if (this.autoUpdate) {
 				this.autoUpdateTimer = setTimeout(() => {
 					this.update();
@@ -455,125 +451,13 @@ new Vue({
 		},
 
 		calcTDR: async function () {
-			if (!this.TDRChart || this.TDRChart.canvas !== this.$refs.TDR) {
-				this.TDRChart = new Chart(this.$refs.TDR.getContext('2d'), {
-					type: 'line',
-					options: {
-						responsive: true,
-						maintainAspectRatio: false,
-						legend: {
-							display: true,
-							position: 'top',
-							padding: 0
-						},
-						layout: {
-							padding: {
-							}
-						},
-						elements: {
-							point: {
-								pointStyle: 'cross',
-								radius: 1,
-								hitRadius: 20,
-								hoverRadius: 20,
-								borderColor: 'black',
-								borderWidth: 0,
-								hoverBorderWidth: 1,
-							},
-							line: {
-								fill: false,
-								tension: 0,
-							}
-						},
-						tooltips: {
-							enabled: true,
-							position: "nearest",
-							mode: "index",
-							intersect: false,
-							/*
-							callbacks: {
-								label: (item, data) => {
-									const {real, imag, freq} = data.datasets[item.datasetIndex].data[item.index];
-									return `${(freq/1e6).toFixed(3)}MHz ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
-								}
-							}
-							*/
-						},
-						animation: {
-							duration: 250
-						},
-						scales: {
-							xAxes: [
-								{
-									display: true,
-									ticks: {
-										maxTicksLimit: 11,
-										callback: (tick) => (tick * (this.velocityOfSignalPropagation / 100)).toFixed(3) + 'm'
-									},
-									scaleLabel: {
-										display: false,
-										labelString: "distance (one way)"
-									},
-								}
-							],
-							yAxes: [
-								{
-									id: 'impulse',
-									display: true,
-									type: 'linear',
-									position: 'left',
-									ticks: {
-									},
-									scaleLabel: {
-										display: true,
-										labelString: "impulse"
-									}
-								},
-								{
-									id: 'step',
-									display: true,
-									position: 'right',
-									type: 'linear',
-									ticks: {
-										min: -1.5,
-										max: +1.5
-									},
-									scaleLabel: {
-										display: true,
-										labelString: "step"
-									}
-								},
-							]
-						}
-					},
-					data: {
-						labels: [],
-						datasets: [
-							{
-								label: `CH0 TDR Impulse`,
-								fill: false,
-								yAxisID: 'impulse',
-								borderColor: this.colorGen(),
-								data: [],
-							},
-							{
-								label: `CH0 TDR Step`,
-								fill: false,
-								yAxisID: 'step',
-								borderColor: this.colorGen(),
-								data: [],
-							}
-						]
-					}
-				});
-			}
+			if (!this.backend) return;
+			if (!this.data.ch0.length) return;
 
 			const SPEED_OF_LIGHT = 299792458;
 			const velocityOfSignalPropagation = this.velocityOfSignalPropagation / 100;
 
-			const tdr = await this.backend.calcTDR();
-			console.log(tdr);
-			console.log({velocityOfSignalPropagation});
+			const tdr = await this.backend.calcTDR(this.data.ch0[0]);
 
 			const distances = Array.from(tdr.time.map( (i) => i * SPEED_OF_LIGHT / 2));
 			const real = tdr.complex.filter( (_, i) => (i % 2) === 0);
@@ -634,6 +518,18 @@ new Vue({
 			this.showTraceDialog = false;
 		},
 
+		updateGraph: function () {
+			if (this.data.ch0.length && this.data.ch1.length) {
+				for (let update of this.updateFunctions) {
+					update();
+				}
+			}
+
+			this.freqChart.data.labels = this.freqs;
+			this.smithChart.update();
+			this.freqChart.update();
+			this.calcTDR();
+		},
 
 		applyScaleSetting: function () {
 			for (let {key, yAxisID} of this.scaleTypes) {
@@ -690,7 +586,330 @@ new Vue({
 			console.log('showSnackbar', message);
 			this.snackbar.message = message;
 			this.snackbar.show = true;
-		}
+		},
+
+		initSmithChart: function () {
+			this.smithChart = new Chart(this.$refs.smith.getContext('2d'), {
+				type: 'smith',
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					legend: {
+						display: false
+					},
+					elements: {
+						point: {
+							pointStyle: 'cross',
+							radius: 1,
+							hitRadius: 20,
+							hoverRadius: 20,
+							borderColor: 'black',
+							borderWidth: 0,
+							hoverBorderWidth: 1,
+						},
+						line: {
+							fill: false,
+							tension: 0,
+							borderCapStyle: 'round',
+							borderJoinStyle: 'round',
+						}
+					},
+					tooltips: {
+						enabled: true,
+						mode: "nearest",
+						callbacks: {
+							label: (item, data) => {
+								const {real, imag, freq} = data.datasets[item.datasetIndex].data[item.index];
+								return `${(freq/1e6).toFixed(3)}MHz ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
+							}
+						}
+					},
+					animation: {
+						duration: 250
+					},
+					layout: {
+						padding: {
+							top: 0,
+							left: 10,
+							right: 10,
+							bottom: 0,
+						}
+					},
+				},
+				data: {
+					datasets: []
+				}
+			});
+
+			this.$refs.smith.addEventListener("click", (e) => {
+				const item = this.smithChart.getElementAtEvent(e)[0];
+				if (!item) return;
+				let data = item._chart.config.data.datasets[item._datasetIndex].data[item._index];
+				console.log(data);
+			});
+		},
+
+		initFreqChart: function () {
+			this.freqChart = new Chart(this.$refs.freq.getContext('2d'), {
+				type: 'line',
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					legend: {
+						display: false,
+						position: 'top',
+						padding: 0
+					},
+					layout: {
+						padding: {
+						}
+					},
+					elements: {
+						point: {
+							pointStyle: 'cross',
+							radius: 1,
+							hitRadius: 20,
+							hoverRadius: 20,
+							borderColor: 'black',
+							borderWidth: 0,
+							hoverBorderWidth: 1,
+						},
+						line: {
+							fill: false,
+							tension: 0,
+						}
+					},
+					tooltips: {
+						enabled: true,
+						position: "nearest",
+						mode: "index",
+						intersect: false,
+						/*
+						callbacks: {
+							label: (item, data) => {
+								const {real, imag, freq} = data.datasets[item.datasetIndex].data[item.index];
+								return `${(freq/1e6).toFixed(3)}MHz ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
+							}
+						}
+						*/
+					},
+					animation: {
+						duration: 250
+					},
+					scales: {
+						xAxes: [
+							{
+								display: true,
+								ticks: {
+									maxTicksLimit: 11,
+									callback: (tick) => (tick / 1e6).toFixed(0) + 'MHz'
+								},
+								scaleLabel: {
+									display: false,
+									labelString: "frequency"
+								},
+								afterFit: (scale) => scale.height = 70,
+							}
+						],
+						yAxes: [
+							{
+								id: 'y-axis-dB',
+								display: false,
+								type: 'linear',
+								ticks: {
+									min: -80.0,
+									max: 0.0,
+									callback: (tick) => tick.toString() + 'dB'
+								},
+								scaleLabel: {
+									display: false,
+									labelString: "mag [dB]"
+								},
+								gridLines: {
+									drawOnChartArea: false,
+								}
+							},
+							{
+								id: 'y-axis-swr',
+								display: false,
+								type: 'linear',
+								ticks: {
+									min: 1.0,
+									max: 30.0,
+									callback: (tick) => tick.toString() 
+								},
+								scaleLabel: {
+									display: false,
+									labelString: "SWR"
+								},
+								position: 'right',
+								gridLines: {
+									drawOnChartArea: false,
+								}
+							},
+							{
+								id: 'y-axis-phase',
+								display: false,
+								type: 'linear',
+								ticks: {
+									min: -90 * 3,
+									max: +90 * 3,
+									callback: (tick) => tick.toString() + '\u00b0'
+								},
+								scaleLabel: {
+									display: false,
+									labelString: "Phase"
+								},
+								position: 'right',
+								gridLines: {
+									drawOnChartArea: false,
+								}
+							},
+							{
+								id: 'y-axis-z',
+								display: false,
+								type: 'linear',
+								ticks: {
+									min: -100,
+									max: +100,
+									callback: (tick) => tick.toString() + '\u03a9'
+								},
+								scaleLabel: {
+									display: false,
+									labelString: "Z"
+								},
+								position: 'right',
+								gridLines: {
+									drawOnChartArea: false,
+								}
+							},
+						]
+					}
+				},
+				data: {
+					labels: SAMPLE_DATA.map( (d) => d.freq ),
+					datasets: [
+					]
+				}
+			});
+		},
+
+		initTDRChart: function () {
+			this.TDRChart = new Chart(this.$refs.TDR.getContext('2d'), {
+				type: 'line',
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					legend: {
+						display: true,
+						position: 'top',
+						padding: 0
+					},
+					layout: {
+						padding: {
+						}
+					},
+					elements: {
+						point: {
+							pointStyle: 'cross',
+							radius: 1,
+							hitRadius: 20,
+							hoverRadius: 20,
+							borderColor: 'black',
+							borderWidth: 0,
+							hoverBorderWidth: 1,
+						},
+						line: {
+							fill: false,
+							tension: 0,
+						}
+					},
+					tooltips: {
+						enabled: true,
+						position: "nearest",
+						mode: "index",
+						intersect: false,
+						/*
+						callbacks: {
+							label: (item, data) => {
+								const {real, imag, freq} = data.datasets[item.datasetIndex].data[item.index];
+								return `${(freq/1e6).toFixed(3)}MHz ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
+							}
+						}
+						*/
+					},
+					animation: {
+						duration: 250
+					},
+					scales: {
+						xAxes: [
+							{
+								display: true,
+								ticks: {
+									maxTicksLimit: 11,
+									callback: (tick) => (tick * (this.velocityOfSignalPropagation / 100)).toFixed(3) + 'm'
+								},
+								scaleLabel: {
+									display: false,
+									labelString: "distance (one way)"
+								},
+							}
+						],
+						yAxes: [
+							{
+								id: 'impulse',
+								display: true,
+								type: 'linear',
+								position: 'left',
+								ticks: {
+								},
+								scaleLabel: {
+									display: true,
+									labelString: "impulse"
+								}
+							},
+							{
+								id: 'step',
+								display: true,
+								position: 'right',
+								type: 'linear',
+								ticks: {
+									min: -1.5,
+									max: +1.5
+								},
+								scaleLabel: {
+									display: true,
+									labelString: "step"
+								}
+							},
+						]
+					}
+				},
+				data: {
+					labels: [],
+					datasets: [
+						{
+							label: `CH0 TDR Impulse`,
+							fill: false,
+							yAxisID: 'impulse',
+							borderColor: this.colorGen(),
+							data: [],
+						},
+						{
+							label: `CH0 TDR Step`,
+							fill: false,
+							yAxisID: 'step',
+							borderColor: this.colorGen(),
+							data: [],
+						}
+					]
+				}
+			});
+		},
+	},
+
+	created: function () {
+		this.updateFunctions = [];
 	},
 
 	mounted: async function () {
@@ -751,21 +970,8 @@ new Vue({
 			}
 		});
 
-		const updateFunctions = [];
-		const updateGraph = () => {
-			if (this.data.ch0.length && this.data.ch1.length) {
-				for (let update of updateFunctions) {
-					update();
-				}
-			}
-
-			this.freqChart.data.labels = this.freqs;
-			this.smithChart.update();
-			this.freqChart.update();
-		}
-
 		this.$watch('traces', () => {
-			updateFunctions.length = 0;
+			this.updateFunctions.length = 0;
 			this.smithChart.data.datasets = [];
 			this.freqChart.data.datasets = [];
 
@@ -799,7 +1005,7 @@ new Vue({
 					yAxisID: yAxisID
 				});
 
-				updateFunctions.push({
+				this.updateFunctions.push({
 					clear: () => {
 						chart.data.datasets[n].data = this.data[`ch${trace.channel}`][0].map(func);
 					},
@@ -846,20 +1052,16 @@ new Vue({
 				}[trace.type || 'clear']);
 			}
 
-			this.availableSmithChart = !!this.smithChart.data.datasets.length;
-			this.availableFreqChart  = !!this.freqChart.data.datasets.length;
-			console.log(this.availableSmithChart, this.availableFreqChart);
-
 			for (let yAxis of this.freqChart.options.scales.yAxes) {
 				yAxis.display = axisSet.has(yAxis.id);
 			}
 
-			updateGraph();
+			this.updateGraph();
 			this.saveLastStateToLocalStorage();
 		});
 
-		this.$watch('data.ch0', updateGraph);
-		this.$watch('data.ch1', updateGraph);
+		this.$watch('data.ch0', () => this.updateGraph());
+		this.$watch('data.ch1', () => this.updateGraph());
 
 		this.$watch('velocityOfSignalPropagation', () => {
 			if (this.TDRChart) {
@@ -888,209 +1090,9 @@ new Vue({
 			},
 		];
 
-		
-
-		this.smithChart = new Chart(this.$refs.smith.getContext('2d'), {
-			type: 'smith',
-			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				legend: {
-					display: false
-				},
-				elements: {
-					point: {
-						pointStyle: 'cross',
-						radius: 1,
-						hitRadius: 20,
-						hoverRadius: 20,
-						borderColor: 'black',
-						borderWidth: 0,
-						hoverBorderWidth: 1,
-					},
-					line: {
-						fill: false,
-						tension: 0,
-						borderCapStyle: 'round',
-						borderJoinStyle: 'round',
-					}
-				},
-				tooltips: {
-					enabled: true,
-					mode: "nearest",
-					callbacks: {
-						label: (item, data) => {
-							const {real, imag, freq} = data.datasets[item.datasetIndex].data[item.index];
-							return `${(freq/1e6).toFixed(3)}MHz ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
-						}
-					}
-				},
-				animation: {
-					duration: 250
-				},
-				layout: {
-					padding: {
-						top: 0,
-						left: 10,
-						right: 10,
-						bottom: 0,
-					}
-				},
-			},
-			data: {
-				datasets: []
-			}
-		});
-
-		this.$refs.smith.addEventListener("click", (e) => {
-			const item = this.smithChart.getElementAtEvent(e)[0];
-			if (!item) return;
-			let data = item._chart.config.data.datasets[item._datasetIndex].data[item._index];
-			console.log(data);
-		});
-
-		this.freqChart = new Chart(this.$refs.freq.getContext('2d'), {
-			type: 'line',
-			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				legend: {
-					display: false,
-					position: 'top',
-					padding: 0
-				},
-				layout: {
-					padding: {
-					}
-				},
-				elements: {
-					point: {
-						pointStyle: 'cross',
-						radius: 1,
-						hitRadius: 20,
-						hoverRadius: 20,
-						borderColor: 'black',
-						borderWidth: 0,
-						hoverBorderWidth: 1,
-					},
-					line: {
-						fill: false,
-						tension: 0,
-					}
-				},
-				tooltips: {
-					enabled: true,
-					position: "nearest",
-					mode: "index",
-					intersect: false,
-					/*
-					callbacks: {
-						label: (item, data) => {
-							const {real, imag, freq} = data.datasets[item.datasetIndex].data[item.index];
-							return `${(freq/1e6).toFixed(3)}MHz ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
-						}
-					}
-					*/
-				},
-				animation: {
-					duration: 250
-				},
-				scales: {
-					xAxes: [
-						{
-							display: true,
-							ticks: {
-								maxTicksLimit: 11,
-								callback: (tick) => (tick / 1e6).toFixed(0) + 'MHz'
-							},
-							scaleLabel: {
-								display: false,
-								labelString: "frequency"
-							},
-							afterFit: (scale) => scale.height = 70,
-						}
-					],
-					yAxes: [
-						{
-							id: 'y-axis-dB',
-							display: false,
-							type: 'linear',
-							ticks: {
-								min: -80.0,
-								max: 0.0,
-								callback: (tick) => tick.toString() + 'dB'
-							},
-							scaleLabel: {
-								display: false,
-								labelString: "mag [dB]"
-							},
-							gridLines: {
-								drawOnChartArea: false,
-							}
-						},
-						{
-							id: 'y-axis-swr',
-							display: false,
-							type: 'linear',
-							ticks: {
-								min: 1.0,
-								max: 30.0,
-								callback: (tick) => tick.toString() 
-							},
-							scaleLabel: {
-								display: false,
-								labelString: "SWR"
-							},
-							position: 'right',
-							gridLines: {
-								drawOnChartArea: false,
-							}
-						},
-						{
-							id: 'y-axis-phase',
-							display: false,
-							type: 'linear',
-							ticks: {
-								min: -90 * 3,
-								max: +90 * 3,
-								callback: (tick) => tick.toString() + '\u00b0'
-							},
-							scaleLabel: {
-								display: false,
-								labelString: "Phase"
-							},
-							position: 'right',
-							gridLines: {
-								drawOnChartArea: false,
-							}
-						},
-						{
-							id: 'y-axis-z',
-							display: false,
-							type: 'linear',
-							ticks: {
-								min: -100,
-								max: +100,
-								callback: (tick) => tick.toString() + '\u03a9'
-							},
-							scaleLabel: {
-								display: false,
-								labelString: "Z"
-							},
-							position: 'right',
-							gridLines: {
-								drawOnChartArea: false,
-							}
-						},
-					]
-				}
-			},
-			data: {
-				labels: SAMPLE_DATA.map( (d) => d.freq ),
-				datasets: [
-				]
-			}
-		});
+		this.initSmithChart();
+		this.initFreqChart();
+		this.initTDRChart();
 
 		this.loadLastStateFromLocalStorage();
 

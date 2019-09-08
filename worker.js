@@ -117,7 +117,7 @@ class Worker {
 		return await this.nanovna.doSave(n);
 	}
 
-	async calcTDR() {
+	async calcTDR(chData) {
 		const windowFunction = (x) => {
 			return 1;
 			/*
@@ -133,9 +133,9 @@ class Worker {
 			return 0.54 - 0.46 * Math.cos(Math.PI * 2 * x);
 		};
 
-		const freqs = await this.getFrequencies();
-		const data = await this.getData(0);
-		console.log('calcTDR', {freqs, data});
+		const freqs = chData.map( i => i.freq );
+		const data = chData.map(i => [i.real, i.imag]);
+		// console.log('calcTDR', {chData, freqs, data});
 
 		for (let i = 0, len = data.length; i < len; i++) {
 			data[i][0] *= windowFunction(i / len);
@@ -145,7 +145,6 @@ class Worker {
 		const input = new Float32Array(FFT_SIZE * 2);
 		input.set(data.flat());
 
-		console.log(input);
 		const output = new Float32Array(FFT_SIZE * 2);
 
 		this.FFT.ifft(input, output);
