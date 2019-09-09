@@ -292,13 +292,13 @@ new Vue({
 			if (this.freqs.some( (v, i) => freqs[i] !== v )) {
 				this.showSnackbar('Frequency range is changed');
 				// freq range is changed
-				this.data.ch0 = [];
-				this.data.ch1 = [];
+				this.data.ch0.length = 0;
+				this.data.ch1.length = 0;
 				for (let dataset of this.freqChart.data.datasets) {
-					dataset.data = [];
+					dataset.data.length = 0;
 				}
 				for (let dataset of this.smithChart.data.datasets) {
-					dataset.data = [];
+					dataset.data.length = 0;
 				}
 			}
 			this.freqs = freqs;
@@ -525,10 +525,18 @@ new Vue({
 				}
 			}
 
-			this.freqChart.data.labels = this.freqs;
-			this.smithChart.update();
-			this.freqChart.update();
-			this.calcTDR();
+			if (this.graphSelected === 'freq') {
+				if (!this.freqChart.data.datasets.length) return;
+				this.freqChart.data.labels = this.freqs;
+				this.freqChart.update();
+			}
+			if (this.graphSelected === 'smith') {
+				if (!this.smithChart.data.datasets.length) return;
+				this.smithChart.update();
+			}
+			if (this.graphSelected === 'tdr') {
+				this.calcTDR();
+			}
 		},
 
 		applyScaleSetting: function () {
@@ -971,11 +979,10 @@ new Vue({
 		});
 
 		this.$watch('traces', () => {
+			console.log('traces updated');
 			this.updateFunctions.length = 0;
-			this.smithChart.data.datasets = [];
-			this.freqChart.data.datasets = [];
-
-			console.log(this.traces);
+			this.smithChart.data.datasets.length = 0;
+			this.freqChart.data.datasets.length = 0;
 
 			const axisSet = new Set();
 			for (let trace of this.traces) {
@@ -1004,6 +1011,7 @@ new Vue({
 					data: [],
 					yAxisID: yAxisID
 				});
+				chart.update();
 
 				this.updateFunctions.push({
 					clear: () => {
