@@ -119,7 +119,11 @@ class Worker {
 
 	async calcTDR(chData) {
 		const windowFunction = (x) => {
-			return 1;
+			// return 1;
+
+			// windowin low
+			x = x / 2 + 0.5;
+
 			/*
 			// blackman window
 			const alpha = 0.16;
@@ -127,10 +131,12 @@ class Worker {
 			const a1 = 1.0 / 2.0;
 			const a2 = alpha / 2.0;
 			return  a0 - a1 * Math.cos(2 * Math.PI * x) + a2 * Math.cos(4 * Math.PI * x);
-			*/
+			//*/
 
+			
 			// hamming window
 			return 0.54 - 0.46 * Math.cos(Math.PI * 2 * x);
+			//*/
 		};
 
 		const freqs = chData.map( i => i.freq );
