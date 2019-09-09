@@ -184,7 +184,7 @@ new Vue({
 		calibrationRunning: false,
 		calibrationStep: "reset",
 
-		graphSelected: 'tdr',
+		graphSelected: 'freq',
 
 		velocityOfSignalPropagation: 70,
 		peakTDR: 0,
