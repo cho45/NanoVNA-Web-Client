@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+		<title>NanoVNA DFU Update with WebUSB DFU</title>
+
+		<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons">
+		<link rel="stylesheet" href="./node_modules/vue-material/dist/vue-material.min.css">
+		<link rel="stylesheet" href="./node_modules/vue-material/dist/theme/default.css">
+
+		<script src="./node_modules/vue/dist/vue.js"></script>
+		<script src="./node_modules/vue-material/dist/vue-material.min.js"></script>
+		<script src="./lib/webdfu/dfu-util/dfu.js"></script>
+		<script src="./lib/webdfu/dfu-util/dfuse.js"></script>
+		<script src="dfu.js" type="module"></script>
+		<style>
+			#log {
+				max-height: 50vh;
+				min-height: 25vh;
+				font-size: 12px;
+				overflow: auto;
+				line-height: 1;
+				padding: 0.5em;
+				background: #efefef;
+			}
+
+			#app {
+				max-width: 50em;
+				margin: 0 auto;
+				padding 1em;
+			}
+
+			#fileUpload {
+				cursor: default;
+				font-size: 24px;
+				color: #555;
+				font-weight: bold;
+				padding: 1em;
+				text-align: center;
+				border-style: solid;
+				border-color: #999;
+				border-width: 5px;
+				border-radius: 10px;
+				margin: 2em 0;
+			}
+
+			#fileUpload input {
+				display: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app">
+			<p>(unofficial)</p>
+
+			<h1>NanoVNA built firmware binaries on CircleCI</h1>
+			<md-table>
+				<md-table-row>
+					<md-table-head md-numeric>ID</md-table-head>
+					<md-table-head>subject</md-table-head>
+					<md-table-head>build time</md-table-head>
+					<md-table-head>rev</md-table-head>
+					<md-table-head></md-table-head>
+				</md-table-row>
+				<md-table-row v-for="build in builds">
+					<md-table-cell><a :href="build.build_url">{{ build.build_num }}</a></md-table-cell>
+					<md-table-cell>{{ build.subject }}</md-table-cell>
+					<md-table-cell>{{ build.committer_date }}</md-table-cell>
+					<md-table-cell><a :href="`https://github.com/ttrftech/NanoVNA/commit/${build.vcs_revision}`">{{ build.vcs_revision.slice(-7) }}</a></md-table-cell>
+					<md-table-cell>
+						<md-button class="md-raised" v-on:click="downloadFirmware(build.build_num)">download</md-button>
+					</md-table-cell>
+				</md-table-row>
+			</md-table>
+			<p><a href="https://circleci.com/gh/ttrftech/NanoVNA">Powered by CircleCI</a></p>
+
+			<md-divider></md-divider>
+
+			<h1>NanoVNA Device Firmware Update</h1>
+
+			<h2>How to enter DFU mode</h2>
+			<p>To enter DFU mode, there are some ways:</p>
+			<ol>
+				<li>Jumper BOOT0 pin on PCB to VDD at powering device. <br/>(jumper should be remove after launching DFU mode).</li>
+				<li>Device Menu (tap screen) [CONFIG] [DFU] [RESET AND ENTER DFU]. (maybe require newer firmware)</li>
+				<li>Send USB serial command "<kbd>reset dfu</kbd>". (maybe require newer firmware)</li>
+			</ol>
+
+			<h2>Update with dfu-util</h2>
+			<p>Install <a href="http://dfu-util.sourceforge.net/">dfu-util</a> and read <a href="https://github.com/ttrftech/NanoVNA#flash-firmware">flash firmware section</a>.</p>
+
+			<h2>Update with WebUSB (experimental)</h2>
+			<div id="fileUpload" v-on:click="$refs.file.click()">
+				<input type="file" ref="file" v-on:change="fileChange"/>
+				<span v-if="firmwareFile">
+					SELECTED .bin FILE:
+					{{firmwareFile.name}}
+					{{firmwareFile.size}}bytes
+				</span>
+				<span v-else>
+					SELECT DOWNLOADED .bin FILE
+				</span>
+			</div>
+
+			<md-button v-on:click="select" class="md-raised md-primary" v-show="!connected">connect device</md-button>
+			<md-button v-on:click="disconnect" class="md-raised" v-show="connected">disconnect</md-button>
+			<md-button v-on:click="write" class="md-raised md-primary" :disabled="!(connected && firmwareFileArrayBuffer)">write</md-button>
+			<p>{{statusText}}</p>
+			<md-progress-bar md-mode="determinate" :md-value="progress.done / progress.total * 100"></md-progress-bar>
+			{{progress.done}} / {{progress.total}}
+			<pre id="log" ref="log"> <div class="line" v-for="line in log">{{line}}</div> </pre>
+
+			<p><a href="https://github.com/devanlai/webdfu">Powered by devanlai/webdfu</a></p>
+		</div>
+	</body>
+</html>
