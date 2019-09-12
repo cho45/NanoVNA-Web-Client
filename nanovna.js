@@ -56,7 +56,7 @@ class NanoVNA {
 			]
 		}).catch(e => null);
 		if (!device) {
-			console.log('no device matched');
+			alert('no device matched');
 			return;
 		}
 		return device;

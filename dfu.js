@@ -48,7 +48,14 @@ new Vue({
 			const filters = [
 				{ vendorId: 0x0483, productId: 0xdf11 }
 			];
-			const device = await navigator.usb.requestDevice({ filters });
+			let device;
+			try {
+				device = await navigator.usb.requestDevice({ filters });
+			} catch (e) {
+				alert(e);
+				this.statusText = e;
+				return;
+			}
 			if (!device) {
 				this.statusText = "no device selected";
 				return;
@@ -64,6 +71,8 @@ new Vue({
 			try {
 				const d = new dfu.Device(device, interfaces[0]);
 				await device.open();
+				console.log(device);
+				await device.selectConfiguration(1);
 				const mapping = await d.readInterfaceNames();
 				for (let intf of interfaces) {
 					if (intf.name === null) {

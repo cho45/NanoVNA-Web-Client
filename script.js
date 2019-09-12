@@ -467,7 +467,7 @@ new Vue({
 			this.peakTDR = distances[mag.indexOf(Math.max(...mag))];
 
 			this.TDRChart.data.labels = distances;
-			this.TDRChart.data.datasets[0].data = mag;
+			this.TDRChart.data.datasets[0].data = real;
 			this.TDRChart.data.datasets[1].data = real.reduce( (r, v, i) => {
 				r.push(i === 0 ? v : r[i - 1] + v);
 				return r;
@@ -917,6 +917,7 @@ new Vue({
 	},
 
 	created: function () {
+		window.NanoVNA = this;
 		this.updateFunctions = [];
 	},
 

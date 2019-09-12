@@ -58,20 +58,20 @@
 			<h1>NanoVNA built firmware binaries on CircleCI</h1>
 			<md-table>
 				<md-table-row>
-					<md-table-head md-numeric>ID</md-table-head>
+					<md-table-head></md-table-head>
 					<md-table-head>subject</md-table-head>
 					<md-table-head>build time</md-table-head>
 					<md-table-head>rev</md-table-head>
-					<md-table-head></md-table-head>
+					<md-table-head md-numeric>ID</md-table-head>
 				</md-table-row>
 				<md-table-row v-for="build in builds">
-					<md-table-cell><a :href="build.build_url">{{ build.build_num }}</a></md-table-cell>
-					<md-table-cell>{{ build.subject }}</md-table-cell>
-					<md-table-cell>{{ build.committer_date }}</md-table-cell>
-					<md-table-cell><a :href="`https://github.com/ttrftech/NanoVNA/commit/${build.vcs_revision}`">{{ build.vcs_revision.slice(-7) }}</a></md-table-cell>
 					<md-table-cell>
 						<md-button class="md-raised" v-on:click="downloadFirmware(build.build_num)">download</md-button>
 					</md-table-cell>
+					<md-table-cell>{{ build.subject }}</md-table-cell>
+					<md-table-cell>{{ build.committer_date }}</md-table-cell>
+					<md-table-cell><a :href="`https://github.com/ttrftech/NanoVNA/commit/${build.vcs_revision}`">{{ build.vcs_revision.slice(-7) }}</a></md-table-cell>
+					<md-table-cell><a :href="build.build_url">{{ build.build_num }}</a></md-table-cell>
 				</md-table-row>
 			</md-table>
 			<p><a href="https://circleci.com/gh/ttrftech/NanoVNA">Powered by CircleCI</a></p>
