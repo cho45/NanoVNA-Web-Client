@@ -1,4 +1,4 @@
-# NanoVNA-WebUSB-Client
+# NanoVNA-Web-Client
 
 Very alpha version.
 
