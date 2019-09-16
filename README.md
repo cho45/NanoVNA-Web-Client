@@ -29,12 +29,21 @@ BE CAREFUL: This rule disables `cdc_acm` driver for all STM32CDC devices (vid:0x
 
 Replace driver with <a href="https://zadig.akeo.ie/">Zadig</a>.
 
-# RUN
+# RUN with WebUSB
 There are no requirements except a browser supporting WebUSB (available by default with Google Chrome currently)
 
 1. Access to https://cho45.stfuawsc.com/NanoVNA/ .
 2. Connect your NanoVNA to USB port.
 3. Click [CONNECT] and select the device.
+
+# RUN with WebSerial
+
+WebSerial is more experimental feature on Google Chrome. But it may resolve driver issues around WebUSB.
+
+1. Enable flag: chrome://flags/#enable-experimental-web-platform-features
+2. Access to https://cho45.stfuawsc.com/NanoVNA/ .
+3. Connect your NanoVNA to USB port.
+4. Click [CONNECT] and select the device.
 
 # Screenshots
 
