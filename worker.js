@@ -44,36 +44,14 @@ class Worker {
 	}
 
 	async open(opts) {
-		const devices = await navigator.usb.getDevices();
-		console.log(opts);
-		const device = !opts ? devices[0] : devices.find( d => {
-			if (opts.vendorId) {
-				if (d.vendorId !== opts.vendorId) {
-					return false;
-				}
-			}
-			if (opts.productId) {
-				if (d.productId !== opts.productId) {
-					return false;
-				}
-			} 
-			if (opts.serialNumber) {
-				if (d.serialNumber !== opts.serialNumber) {
-					return false;
-				}
-			}
-			return true;
-		});
-		if (!device) {
-			return false;
-		}
-		console.log(device);
+		const device = await NanoVNA.getDevice(opts);
 		this.nanovna = new NanoVNA({
 			onerror: (e) => {
 				this.opts.onerror(String(e));
 			},
 			ondisconnected: this.opts.ondisconnected,
 		});
+		console.log({opts, device});
 		await this.nanovna.open(device);
 		return true;
 	}

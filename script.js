@@ -200,6 +200,7 @@ new Vue({
 			info: '',
 		},
 		webVersion: "",
+		serialMode: "serial" in navigator,
 
 		autoUpdate: 1000,
 
@@ -251,11 +252,19 @@ new Vue({
 				this.status = 'connecting'
 				let connected = false;
 				try {
-					connected = await this.backend.open({
-						vendorId: device.vendorId,
-						productId: device.productId,
-						serialNumber: device.serialNumber,
-					});
+					if ('serial' in navigator) {
+						const nanovna = new NanoVNA({
+							onerror: (e) => {
+								this.backend.opts.onerror(String(e));
+							},
+							ondisconnected: this.backend.opts.ondisconnected,
+						});
+						await nanovna.open(device);
+						this.backend.nanovna = Comlink.proxy(nanovna);
+						connected = true;
+					} else {
+						connected = await this.backend.open(NanoVNA.deviceInfo(device));
+					}
 				} catch (e) {
 					this.showSnackbar('failed to open: ' + e);
 				}
@@ -934,7 +943,7 @@ new Vue({
 				this.showSnackbar('Disconnected');
 			},
 		}));
-		const device = (await navigator.usb.getDevices())[0];
+		const device = await NanoVNA.getDevice();
 		this.connect(device);
 
 		const updateStartStop = async () => {

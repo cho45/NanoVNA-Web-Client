@@ -21,8 +21,8 @@
 		<script src="./node_modules/vue/dist/vue.js"></script>
 		<script src="./node_modules/vue-material/dist/vue-material.min.js"></script>
 		<script src="./node_modules/strftime/strftime-min.js"></script>
-		<script src="nanovna.js"></script>
-		<script src="script.js" type="module"></script>
+		<script src="nanovna.js" crossorigin="use-credentials"></script>
+		<script src="script.js" type="module" crossorigin="use-credentials"></script>
 		<style>
 			.md-app {
 				height: 100vh;
@@ -178,6 +178,10 @@
 						<md-list-item @click="showAbout">
 							<md-icon>info</md-icon>
 							<span class="md-list-item-text">Version</span>
+						</md-list-item>
+						<md-list-item>
+							<md-icon>info</md-icon>
+							<span class="md-list-item-text">{{ serialMode ? "Web Serial" : "Web USB" }}</span>
 						</md-list-item>
 					</md-list>
 				</md-app-drawer>

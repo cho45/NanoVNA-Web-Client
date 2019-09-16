@@ -31,7 +31,7 @@ const REF_LEVEL = (1<<9);
 const AUDIO_BUFFER_LEN = 96;
 const DUMP_BUFFER_LEN = AUDIO_BUFFER_LEN / 2;
 
-class NanoVNA {
+class NanoVNA_Base {
 	static get AUDIO_BUFFER_LEN() {
 		return AUDIO_BUFFER_LEN;
 	}
@@ -41,55 +41,21 @@ class NanoVNA {
 	}
 
 	constructor(opts) {
-		this.initialized = false;
-		this.callbacks = [];
 		this.onerror = opts.onerror || function () {};
 		this.ondisconnected = opts.ondisconnected || function () {};
+		this.initialized = false;
 		this.lastCommand = Promise.resolve();
+		this.buffer = '';
+		this.callbacks = [];
 	}
 
-	static async requestDevice(filters) {
-		const device = await navigator.usb.requestDevice({
-			filters: filters || [
-				// https://github.com/ttrftech/NanoVNA/blob/master/usbcfg.c#L38
-				{ 'vendorId': 0x0483, 'productId': 0x5740 }
-			]
-		}).catch(e => null);
-		if (!device) {
-			alert('no device matched');
-			return;
-		}
-		return device;
+	waitNextData() {
+		return new Promise( (resolve) => {
+			this.callbacks.push(resolve);
+		});
 	}
 
-	async open(device) {
-		if (this.device) {
-			await this.close();
-		}
-
-		console.log(device);
-		console.log(device.configurations);
-
-		console.log('open device', device);
-		try {
-			await device.open();
-		} catch (e) {
-			console.log(e);
-			throw new Error("failed to open device");
-		}
-		await device.selectConfiguration(1);
-		console.log('claimInterface');
-		try {
-			// await device.claimInterface(COMMUNICATION_CLASS_INTERFACE);
-			await device.claimInterface(DATA_CLASS_INTERFACE);
-		} catch (e) {
-			console.log(e);
-			throw new Error('failed to claim interface');
-		}
-		console.log('device was opened');
-
-		this.device = device;
-
+	async init() {
 		const callbacks = this.callbacks;
 
 		this.buffer = '';
@@ -126,95 +92,6 @@ class NanoVNA {
 		console.log('version', this.version);
 	}
 	
-	waitNextData() {
-		return new Promise( (resolve) => {
-			this.callbacks.push(resolve);
-		});
-	}
-
-	async startReaderThread(callback) {
-		if (this.readerThread) {
-			throw new Error("already started");
-		}
-
-		const transfer = async (resolve) => {
-			try {
-				const result = await this.device.transferIn(USBD1_DATA_AVAILABLE_EP, 64);
-				if (this.readerThread) {
-					transfer(resolve);
-				} else {
-					resolve();
-				}
-				// console.log('transferIn', result.status);
-				if (result) {
-					if (result.status === 'stall') {
-						console.warn('Endpoint stalled. Clearing.');
-						await this.device.clearHalt('in', USBD1_DATA_AVAILABLE_EP);
-					}
-					if (result.status === 'ok') {
-						callback(new Uint8Array(result.data.buffer));
-					} else {
-						console.log('failed to get transfer');
-					}
-				}
-			} catch (e) {
-				console.error('error on transfer', String(e));
-				this.onerror(e);
-				this.close();
-			}
-		}
-		this.readerThread = [
-			new Promise( resolve => transfer(resolve) ).catch( (e) => {
-				console.log('readerThread catch', e);
-			}),
-			new Promise( resolve => transfer(resolve) ).catch( (e) => {
-				console.log('readerThread catch', e);
-			})
-		];
-	}
-
-	async stopReaderThread() {
-		if (this.readerThread) {
-			console.log('stopReaderThread');
-			const promises = this.readerThread;
-			this.readerThread = null;
-			await Promise.all(promises);
-		}
-	}
-
-	async write(data) {
-		if (typeof data === "string") {
-			// string to utf-8 arraybuffer
-			const arraybuffer = await new Promise( (resolve, reject) => {
-				const reader = new FileReader();
-				reader.onloadend = function () {
-					resolve(reader.result);
-				};
-				reader.readAsArrayBuffer(new Blob([data]));
-			});
-			await this.device.transferOut(USBD1_DATA_REQUEST_EP, arraybuffer);
-		} else {
-			await this.device.transferOut(USBD1_DATA_REQUEST_EP, data);
-		}
-	}
-
-	async close() {
-		console.log('close');
-		try {
-			await this.stopReaderThread();
-		} catch (e) {
-			console.log('failed to stop reader thread');
-		}
-		try {
-			console.log('device.close()');
-			await this.device.close();
-		} catch (e) {
-			console.log('failed to close device');
-		}
-		console.log('call disconnect callback');
-		this.ondisconnected();
-		this.initialized = false;
-	}
 
 	async read(n) {
 		if (!n) n = 1;
@@ -383,4 +260,264 @@ class NanoVNA {
 		return await this.sendCommand(`info\r`, async () => await this.getMultiline());
 	}
 }
+
+class NanoVNA_WebUSB extends NanoVNA_Base {
+	constructor(opts) {
+		super(opts);
+	}
+
+	static async requestDevice(filters) {
+		const device = await navigator.usb.requestDevice({
+			filters: filters || [
+				// https://github.com/ttrftech/NanoVNA/blob/master/usbcfg.c#L38
+				{ 'vendorId': 0x0483, 'productId': 0x5740 }
+			]
+		}).catch(e => null);
+		if (!device) {
+			return;
+		}
+		return device;
+	}
+
+	static async getDevice(opts) {
+		const devices = await navigator.usb.getDevices();
+		const device = !opts ? devices[0] : devices.find( d => {
+			if (opts.vendorId) {
+				if (d.vendorId !== opts.vendorId) {
+					return false;
+				}
+			}
+			if (opts.productId) {
+				if (d.productId !== opts.productId) {
+					return false;
+				}
+			} 
+			if (opts.serialNumber) {
+				if (d.serialNumber !== opts.serialNumber) {
+					return false;
+				}
+			}
+			return true;
+		});
+		console.log(device);
+		return device;
+	}
+
+	static deviceInfo(device) {
+		return {
+			vendorId: device.vendorId,
+			productId: device.productId,
+			serialNumber: device.serialNumber,
+		};
+	}
+
+	async open(device) {
+		if (this.device) {
+			await this.close();
+		}
+
+		console.log(device);
+		console.log(device.configurations);
+
+		console.log('open device', device);
+		try {
+			await device.open();
+		} catch (e) {
+			console.log(e);
+			throw new Error("failed to open device");
+		}
+		await device.selectConfiguration(1);
+		console.log('claimInterface');
+		try {
+			// await device.claimInterface(COMMUNICATION_CLASS_INTERFACE);
+			await device.claimInterface(DATA_CLASS_INTERFACE);
+		} catch (e) {
+			console.log(e);
+			throw new Error('failed to claim interface');
+		}
+		console.log('device was opened');
+
+		this.device = device;
+		await this.init();
+	}
+
+	async startReaderThread(callback) {
+		if (this.readerThread) {
+			throw new Error("already started");
+		}
+
+		const transfer = async (resolve) => {
+			try {
+				const result = await this.device.transferIn(USBD1_DATA_AVAILABLE_EP, 64);
+				if (this.readerThread) {
+					transfer(resolve);
+				} else {
+					resolve();
+				}
+				// console.log('transferIn', result.status);
+				if (result) {
+					if (result.status === 'stall') {
+						console.warn('Endpoint stalled. Clearing.');
+						await this.device.clearHalt('in', USBD1_DATA_AVAILABLE_EP);
+					}
+					if (result.status === 'ok') {
+						callback(new Uint8Array(result.data.buffer));
+					} else {
+						console.log('failed to get transfer');
+					}
+				}
+			} catch (e) {
+				console.error('error on transfer', String(e));
+				this.onerror(e);
+				this.close();
+			}
+		}
+		this.readerThread = [
+			new Promise( resolve => transfer(resolve) ).catch( (e) => {
+				console.log('readerThread catch', e);
+			}),
+			new Promise( resolve => transfer(resolve) ).catch( (e) => {
+				console.log('readerThread catch', e);
+			})
+		];
+	}
+
+	async stopReaderThread() {
+		if (this.readerThread) {
+			console.log('stopReaderThread');
+			const promises = this.readerThread;
+			this.readerThread = null;
+			await Promise.all(promises);
+		}
+	}
+
+	async write(data) {
+		if (typeof data === "string") {
+			// string to utf-8 arraybuffer
+			const arraybuffer = await new Promise( (resolve, reject) => {
+				const reader = new FileReader();
+				reader.onloadend = function () {
+					resolve(reader.result);
+				};
+				reader.readAsArrayBuffer(new Blob([data]));
+			});
+			await this.device.transferOut(USBD1_DATA_REQUEST_EP, arraybuffer);
+		} else {
+			await this.device.transferOut(USBD1_DATA_REQUEST_EP, data);
+		}
+	}
+
+	async close() {
+		console.log('close');
+		try {
+			await this.stopReaderThread();
+		} catch (e) {
+			console.log('failed to stop reader thread');
+		}
+		try {
+			console.log('device.close()');
+			await this.device.close();
+		} catch (e) {
+			console.log('failed to close device');
+		}
+		console.log('call disconnect callback');
+		this.ondisconnected();
+		this.initialized = false;
+	}
+}
+
+class NanoVNA_WebSerial extends NanoVNA_Base {
+	constructor(opts) {
+		super(opts);
+	}
+
+	static async requestDevice(filters) {
+		if (typeof navigator.serial === 'undefined') {
+			return null;
+		}
+
+		const port = await navigator.serial.requestPort({});
+		return port;
+	}
+
+	static async getDevice(opts) {
+		const devices = await navigator.serial.getPorts();
+		console.log('getPorts', devices);
+		return devices[0];
+	}
+
+	static deviceInfo(device) {
+		// no information for serial port...
+		return { };
+	}
+
+	async open(port) {
+		await port.open({
+			baudrate: 115200,
+			/*
+			databits: 8,
+			parity: 0,
+			stopbits: 1,
+			rtscts: false
+			*/
+		});
+
+		this.port = port;
+		this.encoder = new TextEncoder();
+		await this.init();
+	}
+
+	async startReaderThread(callback) {
+		if (this.readerThread) {
+			throw new Error("already started");
+		}
+
+		console.log(this.port.readable);
+		const reader = this.port.readable.getReader();
+		const transfer = async (resolve) => {
+			try {
+				const { value, done } = await reader.read();
+				if (this.readerThread) {
+					transfer(resolve);
+				} else {
+					resolve();
+				}
+				if (done) {
+					throw new Error("EOF");
+				}
+				callback(value);
+			} catch (e) {
+				this.onerror(e);
+				this.close();
+			}
+		};
+
+		this.readerThread = new Promise( resolve => transfer(resolve) ).catch( (e) => {
+			console.log('readerThread catch', e);
+		});
+	}
+
+	async write(data) {
+		const bytes = this.encoder.encode(data);
+		const writer = this.port.writable.getWriter();
+		writer.write(bytes);
+		writer.releaseLock();
+	}
+
+	async close() {
+		try {
+			await this.stopReaderThread();
+		} catch (e) {
+			console.log('failed to stop reader thread');
+		}
+		await this.port.close();
+		this.ondisconnected();
+		this.initialized = false;
+	}
+}
+
+// const NanoVNA = NanoVNA_WebUSB;
+//const NanoVNA = NanoVNA_WebSerial;
+const NanoVNA = ("serial" in navigator) ? NanoVNA_WebSerial : NanoVNA_WebUSB;
+console.log(`Use ${NanoVNA === NanoVNA_WebSerial ? 'WebSerial' : 'WebUSB'} backend`);
 
