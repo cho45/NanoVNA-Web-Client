@@ -412,7 +412,7 @@ class NanoVNA_WebUSB extends NanoVNA_Base {
 		try {
 			await this.stopReaderThread();
 		} catch (e) {
-			console.log('failed to stop reader thread');
+			console.log('failed to stop reader thread', e);
 		}
 		try {
 			console.log('device.close()');
@@ -492,9 +492,18 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 			}
 		};
 
-		this.readerThread = new Promise( resolve => transfer(resolve) ).catch( (e) => {
+		this.readerThread = [ new Promise( resolve => transfer(resolve) ).catch( (e) => {
 			console.log('readerThread catch', e);
-		});
+		}) ];
+	}
+
+	async stopReaderThread() {
+		if (this.readerThread) {
+			console.log('stopReaderThread');
+			const promises = this.readerThread;
+			this.readerThread = null;
+			await Promise.all(promises);
+		}
 	}
 
 	async write(data) {
@@ -508,7 +517,7 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 		try {
 			await this.stopReaderThread();
 		} catch (e) {
-			console.log('failed to stop reader thread');
+			console.log('failed to stop reader thread', e);
 		}
 		await this.port.close();
 		this.ondisconnected();
@@ -516,8 +525,8 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 	}
 }
 
-// const NanoVNA = NanoVNA_WebUSB;
+//const NanoVNA = ("serial" in navigator) ? NanoVNA_WebSerial : NanoVNA_WebUSB;
+ const NanoVNA = NanoVNA_WebUSB;
 //const NanoVNA = NanoVNA_WebSerial;
-const NanoVNA = ("serial" in navigator) ? NanoVNA_WebSerial : NanoVNA_WebUSB;
 console.log(`Use ${NanoVNA === NanoVNA_WebSerial ? 'WebSerial' : 'WebUSB'} backend`);
 

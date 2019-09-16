@@ -287,6 +287,10 @@ new Vue({
 				*/
 				
 				this.update();
+			} else {
+				if (!this.serialMode) {
+					prompt("If you have problems with WebUSB, you can use Web Serial API with enabling flag enable-experimental-web-platform-features.", "chrome://flags/#enable-experimental-web-platform-features");
+				}
 			}
 		},
 
