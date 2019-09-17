@@ -455,7 +455,7 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 	async open(port) {
 		await port.open({
 			baudrate: 115200,
-			buffersize: 8192,
+			buffersize: 262144,
 			/*
 			databits: 8,
 			parity: 0,
@@ -499,9 +499,6 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 			new Promise( resolve => transfer(resolve) ).catch( (e) => {
 				console.log('readerThread catch', e);
 			}),
-			new Promise( resolve => transfer(resolve) ).catch( (e) => {
-				console.log('readerThread catch', e);
-			}) ,
 		];
 	}
 
