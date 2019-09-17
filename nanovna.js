@@ -61,6 +61,7 @@ class NanoVNA_Base {
 		this.buffer = '';
 		this.startReaderThread( (data) => {
 			this.buffer += String.fromCharCode(...data);
+			// console.log(this.buffer);
 			for (var i = 0, it; (it = callbacks[i]); i++) {
 				it();
 			}
@@ -454,6 +455,7 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 	async open(port) {
 		await port.open({
 			baudrate: 115200,
+			buffersize: 8192,
 			/*
 			databits: 8,
 			parity: 0,
@@ -492,9 +494,15 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 			}
 		};
 
-		this.readerThread = [ new Promise( resolve => transfer(resolve) ).catch( (e) => {
-			console.log('readerThread catch', e);
-		}) ];
+		// TODO: Windows requires huge size of buffer for serial port
+		this.readerThread = [
+			new Promise( resolve => transfer(resolve) ).catch( (e) => {
+				console.log('readerThread catch', e);
+			}),
+			new Promise( resolve => transfer(resolve) ).catch( (e) => {
+				console.log('readerThread catch', e);
+			}) ,
+		];
 	}
 
 	async stopReaderThread() {
@@ -507,6 +515,7 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 	}
 
 	async write(data) {
+		// console.log('write', data);
 		const bytes = this.encoder.encode(data);
 		const writer = this.port.writable.getWriter();
 		writer.write(bytes);
