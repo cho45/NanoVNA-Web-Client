@@ -525,8 +525,8 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 	}
 }
 
-//const NanoVNA = ("serial" in navigator) ? NanoVNA_WebSerial : NanoVNA_WebUSB;
- const NanoVNA = NanoVNA_WebUSB;
+const NanoVNA = ("serial" in navigator) ? NanoVNA_WebSerial : NanoVNA_WebUSB;
+// const NanoVNA = NanoVNA_WebUSB;
 //const NanoVNA = NanoVNA_WebSerial;
 console.log(`Use ${NanoVNA === NanoVNA_WebSerial ? 'WebSerial' : 'WebUSB'} backend`);
 
