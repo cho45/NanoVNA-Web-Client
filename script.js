@@ -631,6 +631,7 @@ new Vue({
 						line: {
 							fill: false,
 							tension: 0,
+							borderWidth: 1,
 							borderCapStyle: 'round',
 							borderJoinStyle: 'round',
 						}
@@ -696,6 +697,7 @@ new Vue({
 							hoverBorderWidth: 1,
 						},
 						line: {
+							borderWidth: 1,
 							fill: false,
 							tension: 0,
 						}
@@ -841,6 +843,7 @@ new Vue({
 							hoverBorderWidth: 1,
 						},
 						line: {
+							borderWidth: 1,
 							fill: false,
 							tension: 0,
 						}
