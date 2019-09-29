@@ -222,6 +222,10 @@ class NanoVNA_Base {
 		await this.sendCommand(`sweep ${type} ${freq}\r`);
 	}
 
+	async scan(start, stop, length) {
+		await this.sendCommand(`scan ${start} ${stop} ${length}\r`);
+	}
+
 	async getFrequencies() {
 		const data = await this.sendCommand(`frequencies\r`, async () => await this.getMultiline());
 		return data.split(/\s+/).map( (n) => +n );

@@ -83,6 +83,10 @@ class Worker {
 		return await this.nanovna.setSweep(type, freq);
 	}
 
+	async scan(start, stop, length) {
+		return await this.nanovna.scan(start, stop, length);
+	}
+
 	async getCapture() {
 		return await this.nanovna.getCapture();
 	}
@@ -127,7 +131,14 @@ class Worker {
 		}
 
 		const input = new Float32Array(FFT_SIZE * 2);
-		input.set(data.flat());
+		// input.set(data.flat());
+		for (let i = 0; i < data.length; i++) {
+			input[i*2+0] = data[i][0];
+			input[i*2+1] = data[i][1];
+
+			input[(FFT_SIZE-i)*2+0] =  data[i][0];
+			input[(FFT_SIZE-i)*2+1] = -data[i][1];
+		}
 
 		const output = new Float32Array(FFT_SIZE * 2);
 

@@ -206,10 +206,11 @@ new Vue({
 
 		range: {
 			focusing: "",
-			start: 0,
+			start: 0.05,
 			stop: 900,
 			center: 450,
-			span: 900
+			span: 900,
+			segments: 5,
 		}
 	},
 
@@ -300,55 +301,110 @@ new Vue({
 		},
 
 		update: async function () {
-			this.updating = true;
-			const freqs = await this.backend.getFrequencies();
-			if (this.freqs.some( (v, i) => freqs[i] !== v )) {
-				this.showSnackbar('Frequency range is changed');
-				// freq range is changed
-				this.data.ch0.length = 0;
-				this.data.ch1.length = 0;
-				for (let dataset of this.freqChart.data.datasets) {
-					dataset.data.length = 0;
+			if (this.range.segments === 1) {
+				this.updating = true;
+				const freqs = await this.backend.getFrequencies();
+				if (this.freqs.some( (v, i) => freqs[i] !== v )) {
+					this.showSnackbar('Frequency range is changed');
+					// freq range is changed
+					this.data.ch0.length = 0;
+					this.data.ch1.length = 0;
+					for (let dataset of this.freqChart.data.datasets) {
+						dataset.data.length = 0;
+					}
+					for (let dataset of this.smithChart.data.datasets) {
+						dataset.data.length = 0;
+					}
 				}
-				for (let dataset of this.smithChart.data.datasets) {
-					dataset.data.length = 0;
+				this.freqs = freqs;
+
+				const start = freqs[0], stop = freqs[freqs.length-1];
+				const span   = stop - start;
+				const center = span / 2 + start;
+				console.log({start, stop, span, center});
+				this.range.start = start / 1e6;
+				this.range.stop = stop / 1e6;
+				this.range.span = span / 1e6;
+				this.range.center = center / 1e6;
+
+				const measured0 = await this.backend.getData(0);
+				this.data.ch0.unshift(measured0.map( (complex, i) => ({
+					freq: freqs[i],
+					real: complex[0],
+					imag: complex[1],
+				})));
+
+				const measured1 = await this.backend.getData(1);
+				this.data.ch1.unshift(measured1.map( (complex, i) => ({
+					freq: freqs[i],
+					real: complex[0],
+					imag: complex[1],
+				})));
+				this.updating = false;
+
+				const maxAvgCount = Math.max(...this.traces.map( (i) => i.avgCount || 0 )) || 1;
+				console.log(this.data);
+				this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
+				this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
+
+				if (this.autoUpdate) {
+					this.autoUpdateTimer = setTimeout(() => {
+						this.update();
+					}, this.autoUpdate);
 				}
-			}
-			this.freqs = freqs;
+			} else {
+				this.updating = true;
 
-			const start = freqs[0], stop = freqs[freqs.length-1];
-			const span   = stop - start;
-			const center = span / 2 + start;
-			console.log({start, stop, span, center});
-			this.range.start = start / 1e6;
-			this.range.stop = stop / 1e6;
-			this.range.span = span / 1e6;
-			this.range.center = center / 1e6;
+				const measured0 = [];
+				const measured1 = [];
 
-			const measured0 = await this.backend.getData(0);
-			this.data.ch0.unshift(measured0.map( (complex, i) => ({
-				freq: freqs[i],
-				real: complex[0],
-				imag: complex[1],
-			})));
+				this.data.ch0 = [ measured0 ]; // TODO
+				this.data.ch1 = [ measured1 ]; // TODO
 
-			const measured1 = await this.backend.getData(1);
-			this.data.ch1.unshift(measured1.map( (complex, i) => ({
-				freq: freqs[i],
-				real: complex[0],
-				imag: complex[1],
-			})));
-			this.updating = false;
+				const start = +this.range.start * 1e6;
+				const stop = +this.range.stop * 1e6;
+				const segments = +this.range.segments;
+				const segmentSize = 101;
+				const points = segmentSize * segments;
+				const step = (stop - start) / (points-1);
+				console.log({step});
 
-			const maxAvgCount = Math.max(...this.traces.map( (i) => i.avgCount || 0 )) || 1;
-			console.log(this.data);
-			this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
-			this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
+				for (let i = 0, n = 0; i < segments; i++) {
+					const segmentStart = start + step * n;
+					const segmentStop = stop - (step * (segments - 1)) + step * n;
+					const segmentStep = (segmentStop - segmentStart) / (segmentSize - 1);
+					const freqs = new Uint32Array(segmentSize).map( (_, n) => segmentStep * n + segmentStart);
+					console.log({segmentStart, segmentStop, n});
 
-			if (this.autoUpdate) {
-				this.autoUpdateTimer = setTimeout(() => {
-					this.update();
-				}, this.autoUpdate);
+					await this.backend.scan(segmentStart, segmentStop, segmentSize);
+					const data0 = await this.backend.getData(0);
+					const data1 = await this.backend.getData(1);
+
+					measured0.push(...data0.map( (complex, i) => ({
+						freq: freqs[i],
+						real: complex[0],
+						imag: complex[1],
+					})));
+					measured0.sort( (a, b,) => a.freq - b.freq);
+					measured1.push(...data1.map( (complex, i) => ({
+						freq: freqs[i],
+						real: complex[0],
+						imag: complex[1],
+					})));
+					measured1.sort( (a, b,) => a.freq - b.freq);;
+
+					this.freqs = measured0.map( (i) => i.freq );
+					n = i % 2 === 0 ? n + segments - i - 1 : n - (segments - i - 1);
+				}
+
+				const maxAvgCount = Math.max(...this.traces.map( (i) => i.avgCount || 0 )) || 1;
+				console.log(this.data);
+				this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
+				this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
+				console.log(this.data);
+
+				this.updating = false;
+				this.autoUpdate = 0;
 			}
 		},
 
@@ -646,9 +702,7 @@ new Vue({
 							}
 						}
 					},
-					animation: {
-						duration: 250
-					},
+					animation: false,
 					layout: {
 						padding: {
 							top: 0,
@@ -716,9 +770,7 @@ new Vue({
 						}
 						*/
 					},
-					animation: {
-						duration: 250
-					},
+					animation: false,
 					scales: {
 						xAxes: [
 							{
@@ -862,9 +914,7 @@ new Vue({
 						}
 						*/
 					},
-					animation: {
-						duration: 250
-					},
+					animation: false,
 					scales: {
 						xAxes: [
 							{
