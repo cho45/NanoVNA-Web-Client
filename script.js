@@ -355,6 +355,7 @@ new Vue({
 			} else {
 				this.updating = true;
 
+
 				const measured0 = [];
 				const measured1 = [];
 
@@ -368,6 +369,8 @@ new Vue({
 				const points = segmentSize * segments;
 				const step = (stop - start) / (points-1);
 				console.log({step});
+
+				// this.freqs = Array.from(new Uint32Array(11).map( (_, n) => (stop - start) / (11 - 1) * n + start));
 
 				for (let i = 0, n = 0; i < segments; i++) {
 					const segmentStart = start + step * n;
@@ -776,8 +779,17 @@ new Vue({
 							{
 								display: true,
 								ticks: {
+									autoSkip: false,
+									stepSize: 100e6,
 									maxTicksLimit: 11,
-									callback: (tick) => (tick / 1e6).toFixed(0) + 'MHz'
+									callback: (value, index, values) => {
+										const n = index % Math.floor(values.length / 11) === 0 && index < values.length / 11 * 10;
+										if (n || index === values.length - 1) {
+											return (value / 1e6).toFixed(0) + 'MHz';
+										} else {
+											return null;
+										}
+									}
 								},
 								scaleLabel: {
 									display: false,
