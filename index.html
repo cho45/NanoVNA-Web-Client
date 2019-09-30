@@ -111,8 +111,14 @@
 					<h3 class="md-title" style="flex: 1">NanoVNA</h3>
 					<md-button class="md-primary" v-show="disconnected" @click="connect()"><md-icon>usb</md-icon> connect</md-button>
 					<md-button class="md-primary" v-show="status === 'connecting'" disabled><md-icon>usb</md-icon> connecting...</md-button>
-					<md-button class="md-primary" v-show="connected && autoUpdate" @click="pause"><md-icon>pause</md-icon> Pause</md-button>
-					<md-button class="md-primary" v-show="connected && !autoUpdate" @click="resume"><md-icon>refresh</md-icon> Resume</md-button>
+					<template v-if="+range.segments === 1">
+						<md-button class="md-primary" v-show="connected && autoUpdate" @click="pause"><md-icon>pause</md-icon> Pause</md-button>
+						<md-button class="md-primary" v-show="connected && !autoUpdate" @click="resume"><md-icon>refresh</md-icon> Resume</md-button>
+					</template>
+					<template v-else>
+						<md-button class="md-primary" v-show="connected &&  updating" @click="stop" :disabled="requestStop"><md-icon>pause</md-icon> Stop [{{progress.value}}/{{progress.total}}]</md-button>
+						<md-button class="md-primary" v-show="connected && !updating" @click="refresh"><md-icon>refresh</md-icon> Update</md-button>
+					</template>
 				</md-app-toolbar>
 
 
@@ -132,6 +138,10 @@
 						<md-list-item @click="disconnect()" v-show="connected">
 							<md-icon>cancel</md-icon>
 							<span class="md-list-item-text">Disconnect</span>
+						</md-list-item>
+						<md-list-item @click="showResolutionDialog = true" :disabled="!connected">
+							<md-icon>gradient</md-icon>
+							<span class="md-list-item-text">Resolution...</span>
 						</md-list-item>
 						<md-subheader>Save</md-subheader>
 						<md-list-item @click="saveAs('s1p')" :disabled="!connected">
@@ -423,6 +433,24 @@
 					<md-button class="md-primary" v-show="!capturing" ref="downloadLink" download="nanovna.png" :href="captureDownloadHref"><md-icon>cloud_download</md-icon> Download</md-button>
 					<md-button class="md-accent" v-show="!capturing" @click="capture"><md-icon>refresh</md-icon> Recapture</md-button>
 					<md-button class="" @click="showCaptureDialog = false">Close</md-button>
+				</md-dialog-actions>
+			</md-dialog>
+
+			<md-dialog :md-active.async="showResolutionDialog">
+				<md-dialog-title>Custom Resolution</md-dialog-title>
+				<md-dialog-content>
+					<p>By increasing the number of segments:</p>
+					<ul>
+						<li>Increases the number of measurement points and frequency resolution.</li>
+						<li>Measurement time increases.</li>
+					</ul>
+					<md-field class="">
+						<label>Segments (Total measuring point is 101 * number of segments)</label>
+						<md-input type="number" min="1" max="100" v-model="range.segments"></md-input>
+					</md-field>
+				</md-dialog-content>
+				<md-dialog-actions>
+					<md-button class="" @click="showResolutionDialog = false">Close</md-button>
 				</md-dialog-actions>
 			</md-dialog>
 

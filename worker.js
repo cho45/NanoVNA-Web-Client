@@ -65,6 +65,10 @@ class Worker {
 		this.nanovna = null;
 	}
 
+	async resume() {
+		await this.nanovna.resume();
+	}
+
 	async getFrequencies() {
 		if (this.frequencies) {
 			return this.frequencies;

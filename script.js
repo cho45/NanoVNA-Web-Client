@@ -172,6 +172,10 @@ new Vue({
 		freqInputSelect: "start-stop",
 
 		updating: false,
+		progress: {
+			total: 0,
+			value: 0,
+		},
 
 		showCalibrationDialog: false,
 
@@ -203,6 +207,9 @@ new Vue({
 		serialMode: "serial" in navigator,
 
 		autoUpdate: 1000,
+		requestStop: true,
+
+		showResolutionDialog: false,
 
 		range: {
 			focusing: "",
@@ -301,125 +308,171 @@ new Vue({
 		},
 
 		update: async function () {
-			if (this.range.segments === 1) {
-				this.updating = true;
-				const freqs = await this.backend.getFrequencies();
-				if (this.freqs.some( (v, i) => freqs[i] !== v )) {
-					this.showSnackbar('Frequency range is changed');
-					// freq range is changed
-					this.data.ch0.length = 0;
-					this.data.ch1.length = 0;
-					for (let dataset of this.freqChart.data.datasets) {
-						dataset.data.length = 0;
-					}
-					for (let dataset of this.smithChart.data.datasets) {
-						dataset.data.length = 0;
-					}
-				}
-				this.freqs = freqs;
-
-				const start = freqs[0], stop = freqs[freqs.length-1];
-				const span   = stop - start;
-				const center = span / 2 + start;
-				console.log({start, stop, span, center});
-				this.range.start = start / 1e6;
-				this.range.stop = stop / 1e6;
-				this.range.span = span / 1e6;
-				this.range.center = center / 1e6;
-
-				const measured0 = await this.backend.getData(0);
-				this.data.ch0.unshift(measured0.map( (complex, i) => ({
-					freq: freqs[i],
-					real: complex[0],
-					imag: complex[1],
-				})));
-
-				const measured1 = await this.backend.getData(1);
-				this.data.ch1.unshift(measured1.map( (complex, i) => ({
-					freq: freqs[i],
-					real: complex[0],
-					imag: complex[1],
-				})));
-				this.updating = false;
-
-				const maxAvgCount = Math.max(...this.traces.map( (i) => i.avgCount || 0 )) || 1;
-				console.log(this.data);
-				this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
-				this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
-
-				if (this.autoUpdate) {
-					this.autoUpdateTimer = setTimeout(() => {
-						this.update();
-					}, this.autoUpdate);
-				}
+			if (+this.range.segments === 1) {
+				this.updateSingleSegment();
 			} else {
-				this.updating = true;
+				this.updateMultiSegments();
+			}
+		},
 
-
-				const measured0 = [];
-				const measured1 = [];
-
-				this.data.ch0 = [ measured0 ]; // TODO
-				this.data.ch1 = [ measured1 ]; // TODO
-
-				const start = +this.range.start * 1e6;
-				const stop = +this.range.stop * 1e6;
-				const segments = +this.range.segments;
-				const segmentSize = 101;
-				const points = segmentSize * segments;
-				const step = (stop - start) / (points-1);
-				console.log({step});
-
-				// this.freqs = Array.from(new Uint32Array(11).map( (_, n) => (stop - start) / (11 - 1) * n + start));
-
-				for (let i = 0, n = 0; i < segments; i++) {
-					const segmentStart = start + step * n;
-					const segmentStop = stop - (step * (segments - 1)) + step * n;
-					const segmentStep = (segmentStop - segmentStart) / (segmentSize - 1);
-					const freqs = new Uint32Array(segmentSize).map( (_, n) => segmentStep * n + segmentStart);
-					console.log({segmentStart, segmentStop, n});
-
-					await this.backend.scan(segmentStart, segmentStop, segmentSize);
-					const data0 = await this.backend.getData(0);
-					const data1 = await this.backend.getData(1);
-
-					measured0.push(...data0.map( (complex, i) => ({
-						freq: freqs[i],
-						real: complex[0],
-						imag: complex[1],
-					})));
-					measured0.sort( (a, b,) => a.freq - b.freq);
-					measured1.push(...data1.map( (complex, i) => ({
-						freq: freqs[i],
-						real: complex[0],
-						imag: complex[1],
-					})));
-					measured1.sort( (a, b,) => a.freq - b.freq);;
-
-					this.freqs = measured0.map( (i) => i.freq );
-					n = i % 2 === 0 ? n + segments - i - 1 : n - (segments - i - 1);
+		updateSingleSegment: async function () {
+			this.updating = true;
+			await this.backend.resume();
+			const freqs = await this.backend.getFrequencies();
+			if (this.freqs.some( (v, i) => freqs[i] !== v )) {
+				this.showSnackbar('Frequency range is changed');
+				// freq range is changed
+				this.data.ch0.length = 0;
+				this.data.ch1.length = 0;
+				for (let dataset of this.freqChart.data.datasets) {
+					dataset.data.length = 0;
 				}
+				for (let dataset of this.smithChart.data.datasets) {
+					dataset.data.length = 0;
+				}
+			}
+			this.freqs = freqs;
 
-				const maxAvgCount = Math.max(...this.traces.map( (i) => i.avgCount || 0 )) || 1;
-				console.log(this.data);
-				this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
-				this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
-				console.log(this.data);
+			const start = freqs[0], stop = freqs[freqs.length-1];
+			const span   = stop - start;
+			const center = span / 2 + start;
+			console.log({start, stop, span, center});
+			this.range.start = start / 1e6;
+			this.range.stop = stop / 1e6;
+			this.range.span = span / 1e6;
+			this.range.center = center / 1e6;
 
-				this.updating = false;
-				this.autoUpdate = 0;
+			const measured0 = await this.backend.getData(0);
+			this.data.ch0.unshift(measured0.map( (complex, i) => ({
+				freq: freqs[i],
+				real: complex[0],
+				imag: complex[1],
+			})));
+
+			const measured1 = await this.backend.getData(1);
+			this.data.ch1.unshift(measured1.map( (complex, i) => ({
+				freq: freqs[i],
+				real: complex[0],
+				imag: complex[1],
+			})));
+			this.updating = false;
+
+			const maxAvgCount = Math.max(...this.traces.map( (i) => i.avgCount || 0 )) || 1;
+			console.log(this.data);
+			this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
+			this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
+
+			if (this.autoUpdate) {
+				this.autoUpdateTimer = setTimeout(() => {
+					this.update();
+				}, this.autoUpdate);
+			}
+		},
+
+		updateMultiSegments: async function () {
+			this.updating = true;
+			this.requestStop = false;
+
+			// copy previous data
+			const measured0 = Array.from(this.data.ch0[0] || []);
+			const measured1 = Array.from(this.data.ch1[0] || []);
+
+			this.data.ch0.unshift(measured0);
+			this.data.ch1.unshift(measured1);
+
+			const start = +this.range.start * 1e6;
+			const stop = +this.range.stop * 1e6;
+			const segments = +this.range.segments;
+			const segmentSize = 101;
+			const points = segmentSize * segments;
+			const step = (stop - start) / (points-1);
+			console.log({step});
+
+			this.progress.total = segments;
+			this.progress.value = 0;
+
+			// this.freqs = Array.from(new Uint32Array(11).map( (_, n) => (stop - start) / (11 - 1) * n + start));
+
+			for (let i = 0, n = 0; i < segments; i++) {
+				this.progress.value = i;
+
+				const segmentStart = start + step * n;
+				const segmentStop = stop - (step * (segments - 1)) + step * n;
+				const segmentStep = (segmentStop - segmentStart) / (segmentSize - 1);
+				const freqs = new Uint32Array(segmentSize).map( (_, n) => segmentStep * n + segmentStart);
+				console.log({segmentStart, segmentStop, n});
+
+				await this.backend.scan(segmentStart, segmentStop, segmentSize);
+				const data0 = await this.backend.getData(0);
+				const data1 = await this.backend.getData(1);
+
+				const m0 = measured0.
+					// remove previous data
+					filter( (i) => !freqs.includes(i.freq) ).
+					// append new data
+					concat(data0.map( (complex, i) => ({
+						freq: freqs[i],
+						real: complex[0],
+						imag: complex[1],
+					}))).
+					sort( (a, b,) => a.freq - b.freq);
+				// replace with new data
+				measured0.splice(0, measured0.length, ...m0);
+
+				const m1 = measured1.
+					// remove previous data
+					filter( (i) => !freqs.includes(i.freq) ).
+					// append new data
+					concat(data1.map( (complex, i) => ({
+						freq: freqs[i],
+						real: complex[0],
+						imag: complex[1],
+					}))).
+					sort( (a, b,) => a.freq - b.freq);
+				// replace with new data
+				measured1.splice(0, measured1.length, ...m1);
+
+				this.freqs = measured0.map( (i) => i.freq );
+				n = i % 2 === 0 ? n + segments - i - 1 : n - (segments - i - 1);
+
+				if (this.requestStop) {
+					break;
+				}
+			}
+
+			const maxAvgCount = Math.max(...this.traces.map( (i) => i.avgCount || 0 )) || 1;
+			console.log(this.data);
+			this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
+			this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
+			console.log(this.data);
+
+			this.updating = false;
+
+			if (this.autoUpdate) {
+				this.autoUpdateTimer = setTimeout(() => {
+					this.update();
+				}, this.autoUpdate);
 			}
 		},
 
 		pause: async function () {
 			clearTimeout(this.autoUpdateTimer);
 			this.autoUpdate = 0;
-			// await this.backend.doPause();
 		},
 
 		resume: function () {
 			this.autoUpdate = 1000;
 			this.update();
+		},
+
+		refresh: async function () {
+			this.autoUpdate = 100;
+			this.update();
+		},
+
+		stop: async function () {
+			this.autoUpdate = 0;
+			this.requestStop = true;
 		},
 
 		saveAs: function (format) {
@@ -632,6 +685,7 @@ new Vue({
 			const saving = {
 				traces: this.traces,
 				scales: this.scales,
+				range: this.range,
 			};
 			console.log('save to localStorage', saving);
 			localStorage.setItem('nanovna', JSON.stringify(saving));
@@ -653,6 +707,9 @@ new Vue({
 			if (saved.scales) {
 				this.scales = saved.scales;
 				this.applyScaleSetting();
+			}
+			if (saved.range) {
+				this.range = saved.range;
 			}
 		},
 
@@ -995,7 +1052,7 @@ new Vue({
 	},
 
 	created: function () {
-		window.NanoVNA = this;
+		window.app = this;
 		this.updateFunctions = [];
 	},
 
@@ -1016,36 +1073,57 @@ new Vue({
 		this.connect(device);
 
 		const updateStartStop = async () => {
-			/*
-			const [start, stop] = [ +this.range.start, +this.range.stop ];
-			const span   = stop - start;
-			const center = span / 2 + start;
-			console.log('updateStartStop', this.range.center, this.range.span, {center, span});
-			this.range.center = center;
-			this.range.span = span;
-			*/
-			if (this.connected && this.range.focusing) {
-				await this.backend.setSweep(this.range.focusing, this.range[this.range.focusing] * 1e6);
+			if (+this.range.segments === 1) {
+				if (this.connected && this.range.focusing) {
+					await this.backend.setSweep(this.range.focusing, this.range[this.range.focusing] * 1e6);
+				}
+			} else {
+				if (this.range.focusing === 'start' ||
+					this.range.focusing === 'stop') {
+					const [start, stop] = [ +this.range.start, +this.range.stop ];
+					const span   = stop - start;
+					const center = span / 2 + start;
+					console.log('updateStartStop', this.range.center, this.range.span, {center, span});
+					this.range.center = center;
+					this.range.span = span;
+					this.data.ch0.length = 0;
+					this.data.ch1.length = 0;
+				}
 			}
+			this.saveLastStateToLocalStorage();
 		};
 
 		const updateCenterSpan = async () => {
-			/*
-			const [center, span] = [ +this.range.center, +this.range.span ];
-			const start = center - (span / 2);
-			const stop = center + (span / 2);
-			this.range.start = start;
-			this.range.stop = stop;
-			*/
-			if (this.connected && this.range.focusing) {
-				await this.backend.setSweep(this.range.focusing, this.range[this.range.focusing] * 1e6);
+			if (+this.range.segments === 1) {
+				if (this.connected && this.range.focusing) {
+					await this.backend.setSweep(this.range.focusing, this.range[this.range.focusing] * 1e6);
+				}
+			} else {
+				if (this.range.focusing === 'center' ||
+					this.range.focusing === 'span') {
+
+					const [center, span] = [ +this.range.center, +this.range.span ];
+					const start = center - (span / 2);
+					const stop = center + (span / 2);
+					console.log('updateCenterSpan', { start, stop });
+					this.range.start = start;
+					this.range.stop = stop;
+					this.data.ch0.length = 0;
+					this.data.ch1.length = 0;
+				}
 			}
+			this.saveLastStateToLocalStorage();
 		};
 
 		this.$watch('range.start', updateStartStop);
 		this.$watch('range.stop', updateStartStop);
 		this.$watch('range.center', updateCenterSpan);
 		this.$watch('range.span', updateCenterSpan);
+		this.$watch('range.segments', () => {
+			this.data.ch0.length = 0;
+			this.data.ch1.length = 0;
+			this.saveLastStateToLocalStorage();
+		});
 
 		let updateTimer;
 		this.$watch('range.focusing', (newVal) => {
