@@ -217,7 +217,7 @@ new Vue({
 			stop: 900,
 			center: 450,
 			span: 900,
-			segments: 5,
+			segments: 1,
 		}
 	},
 
