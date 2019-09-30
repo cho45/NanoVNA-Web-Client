@@ -308,6 +308,11 @@ new Vue({
 		},
 
 		update: async function () {
+			if (this.updating) {
+				console.log('already running');
+				return;
+			}
+
 			if (+this.range.segments === 1) {
 				this.updateSingleSegment();
 			} else {
