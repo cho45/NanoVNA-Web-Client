@@ -260,7 +260,7 @@ new Vue({
 				this.status = 'connecting'
 				let connected = false;
 				try {
-					if ('serial' in navigator) {
+					if ('serial' in navigator || typeof Capacitor !== 'undefined') {
 						const nanovna = new NanoVNA({
 							onerror: (e) => {
 								this.backend.opts.onerror(String(e));

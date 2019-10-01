@@ -535,8 +535,82 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 	}
 }
 
-const NanoVNA = ("serial" in navigator) ? NanoVNA_WebSerial : NanoVNA_WebUSB;
+class NanoVNA_Capacitor extends NanoVNA_Base {
+	constructor(opts) {
+		super(opts);
+	}
+
+	static async requestDevice(filters) {
+		return new Promise( (resolve, reject) => {
+			serial.requestPermission(
+				{vid: '0483', pid: '5740'},
+				resolve,
+				reject
+			);
+		});
+	}
+
+	static async getDevice(opts) {
+		return null;
+	}
+
+	static deviceInfo(device) {
+		// no information for serial port...
+		return { };
+	}
+
+	async open() {
+		await new Promise( (resolve, reject) => {
+			serial.open(
+				{ baudRate: 115200 },
+				resolve,
+				reject
+			);
+		});
+
+		this.encoder = new TextEncoder();
+		await this.init();
+	}
+
+	async startReaderThread(callback) {
+		if (this.readerThread) {
+			throw new Error("already started");
+		}
+
+		serial.registerReadCallback(
+			(data) => {
+				callback(new Uint8Array(data));
+			},
+			(e) => {
+				this.onerror(e);
+				this.close();
+			}
+		);
+	}
+
+	async write(data) {
+		// console.log('write', data);
+		await new Promise( (resolve, reject) => {
+			serial.write(data, resolve, reject);
+		});
+	}
+
+	async close() {
+		await new Promise( (resolve, reject) => {
+			serial.close(resolve, reject);
+		});
+		this.ondisconnected();
+		this.initialized = false;
+	}
+}
+console.log('typeof serial', typeof serial);
+
+const NanoVNA =
+	(typeof Capacitor !== "undefined") ? NanoVNA_Capacitor:
+	("serial" in navigator) ? NanoVNA_WebSerial:
+	NanoVNA_WebUSB;
+
 // const NanoVNA = NanoVNA_WebUSB;
 //const NanoVNA = NanoVNA_WebSerial;
-console.log(`Use ${NanoVNA === NanoVNA_WebSerial ? 'WebSerial' : 'WebUSB'} backend`);
+console.log(`Use ${NanoVNA.constructor.name} backend`);
 
