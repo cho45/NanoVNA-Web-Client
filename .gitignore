@@ -1,3 +1,4 @@
 www/
 *.class
 .gradle/
+node_modules/@capacitor/android/capacitor/build/
