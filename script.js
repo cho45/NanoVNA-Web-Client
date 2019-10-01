@@ -108,6 +108,28 @@ function calcZr(i) {
 	};
 }
 
+async function downloadFile(url, name) {
+	if (typeof Capacitor === 'undefined') {
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = name;
+		a.click();
+	} else {
+		const { Filesystem } = Capacitor.Plugins;
+		try {
+			const data = await (await fetch(url)).arrayBuffer();
+			await Filesystem.writeFile({
+				path: name,
+				data: btoa(String.fromCharCode(...new Uint8Array(data))),
+				directory: 'DOCUMENTS',
+				encoding: undefined,
+			});
+		} catch(e) {
+			console.error('Unable to write file', e);
+		}
+	}
+}
+
 new Vue({
 	el: "#app",
 	data: {
@@ -480,7 +502,7 @@ new Vue({
 			this.requestStop = true;
 		},
 
-		saveAs: function (format) {
+		saveAs: async function (format) {
 			if (format === 's1p') {
 				const body = [];
 				body.push('# Hz S RI R 50\n');
@@ -489,10 +511,9 @@ new Vue({
 				});
 				const blob = new Blob(body, { type: 'application/octet-stream' });
 				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s1p`;
-				a.click();
+				const name = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s1p`;
+				downloadFile(url, name);
+				this.showSnackbar(`Saved as ${name}`);
 			} else
 			if (format === 's2p') {
 				const body = [];
@@ -504,10 +525,9 @@ new Vue({
 				});
 				const blob = new Blob(body, { type: 'application/octet-stream' });
 				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s2p`;
-				a.click();
+				const name = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s2p`;
+				downloadFile(url, name);
+				this.showSnackbar(`Saved as ${name}`);
 			} else {
 				alert('not implemented');
 			}
@@ -517,10 +537,9 @@ new Vue({
 			const canvas = this.$refs[graph];
 			canvas.toBlob((blob) => {
 				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = this.graph + `-${strftime('%Y%m%d-%H%M%S')}.png`;
-				a.click();
+				const name = `graph-${strftime('%Y%m%d-%H%M%S')}.png`;
+				downloadFile(url, name);
+				this.showSnackbar(`Saved as ${name}`);
 			});
 		},
 
@@ -578,6 +597,12 @@ new Vue({
 			ctx.putImageData(imd, 0, 0);
 			this.captureDownloadHref = canvas.toDataURL();
 			this.capturing = false;
+		},
+
+		downloadCapture: async function () {
+			const name = `nanovna-capture-${strftime('%Y%m%d-%H%M%S')}.png`;
+			downloadFile(this.captureDownloadHref, name);
+			this.showSnackbar(`Saved as ${name}`);
 		},
 
 		calcTDR: async function () {

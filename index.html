@@ -431,7 +431,7 @@
 					<md-progress-bar md-mode="indeterminate" v-show="capturing"></md-progress-bar>
 				</md-dialog-content>
 				<md-dialog-actions>
-					<md-button class="md-primary" v-show="!capturing" ref="downloadLink" download="nanovna.png" :href="captureDownloadHref"><md-icon>cloud_download</md-icon> Download</md-button>
+					<md-button class="md-primary" v-show="!capturing" @click="downloadCapture"><md-icon>cloud_download</md-icon> Download</md-button>
 					<md-button class="md-accent" v-show="!capturing" @click="capture"><md-icon>refresh</md-icon> Recapture</md-button>
 					<md-button class="" @click="showCaptureDialog = false">Close</md-button>
 				</md-dialog-actions>
