@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NanoVNA WebApp</string>
+    <string name="title_activity_main">NanoVNA WebApp</string>
+    <string name="package_name">net.lowreal.nanovnawebapp</string>
+    <string name="fileprovider_authority">net.lowreal.nanovnawebapp.fileprovider</string>
+    <string name="custom_url_scheme">net.lowreal.nanovnawebapp</string>
+</resources>

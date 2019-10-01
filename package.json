@@ -13,7 +13,11 @@
   "author": "cho45 <cho45@lowreal.net> (http://www.lowreal.net/)",
   "license": "GPL",
   "dependencies": {
+    "@capacitor/android": "^1.2.1",
+    "@capacitor/cli": "^1.2.1",
+    "@capacitor/core": "^1.2.1",
     "comlink": "^4.0.2",
+    "cordovarduino": "0.0.10",
     "strftime": "^0.10.0",
     "vue": "^2.6.10",
     "vue-material": "^1.0.0-beta-11"
