@@ -204,7 +204,7 @@ new Vue({
 			info: '',
 		},
 		webVersion: "",
-		serialMode: "serial" in navigator,
+		serialMode: NanoVNA.name.replace(/^NanoVNA_/, ''),
 
 		autoUpdate: 1000,
 		requestStop: true,
