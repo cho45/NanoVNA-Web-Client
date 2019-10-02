@@ -26,7 +26,7 @@ const lib = {};
 	console.log(lib);
 })();
 
-const FFT_SIZE = 1024;
+const FFT_SIZE = 8192;
 
 class Worker {
 	constructor() {
