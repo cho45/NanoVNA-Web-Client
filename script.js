@@ -15,7 +15,7 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABI
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-import * as Comlink from "./node_modules/comlink/dist/esm/comlink.mjs";
+import * as Comlink from "./lib/comlink/esm/comlink.mjs";
 //const Backend = Comlink.wrap(new Worker("./worker.js", { type: "module" }));
 const Backend = Comlink.wrap(new Worker("./worker.js"));
 

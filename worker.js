@@ -16,7 +16,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 */
 
 //import * as Comlink from "./node_modules/comlink/dist/esm/comlink.mjs";  
-importScripts("./node_modules/comlink/dist/umd/comlink.js");
+importScripts("./lib/comlink/umd/comlink.js");
 importScripts("nanovna.js");
 
 const lib = {};
