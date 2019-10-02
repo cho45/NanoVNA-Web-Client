@@ -75,3 +75,18 @@ $ cargo install --force cargo-make
 See also <a href="https://developer.mozilla.org/en-US/docs/WebAssembly/Rust_to_wasm">Compiling from Rust to WebAssembly</a>
 
 
+# Android App
+
+build with capacitor:
+
+```
+$ make cap
+$ npx cap open android
+```
+
+## release
+
+ * Edit android/app/build.gradle and increment version
+ * Build -> Generate Signed Bundle / APK
+ * Android Build Bundle
+

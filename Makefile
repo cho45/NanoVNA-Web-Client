@@ -10,6 +10,6 @@ cap:
 	ln -sf $(wildcard $(PWD)/*.html) www
 	ln -sf $(PWD)/images www
 	ln -sf $(PWD)/dsp-wasm www
-	cp --dereference -r lib www/lib
+	cp -RL lib www/lib
 	npx cap copy
 

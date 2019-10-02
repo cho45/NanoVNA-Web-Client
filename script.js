@@ -305,6 +305,7 @@ new Vue({
 
 				this.deviceInfo.version = await this.backend.getVersion();
 				this.status = 'connected';
+				this.showSnackbar('Connected');
 
 				/*
 				const start = 50e3;
@@ -326,6 +327,9 @@ new Vue({
 
 		disconnect: async function () {
 			this.backend.close();
+			this.requestStop = true;
+			this.autoUpdate = 0;
+			this.updating = false;
 			this.status = 'disconnected';
 		},
 
@@ -745,7 +749,12 @@ new Vue({
 
 		showAbout: async function () {
 			this.showAboutDialog = true;
-			this.webVersion = (await (await fetch('.git/refs/heads/master')).text()).substring(0, 7);
+			if (typeof Capacitor === 'undefined') {
+				this.webVersion = (await (await fetch('.git/refs/heads/master')).text()).substring(0, 7);
+			} else {
+				const info = await Capacitor.Plugins.Device.getInfo();
+				this.webVersion = `${info.appVersion} (${info.platform} ${info.osVersion} ${info.model})`;
+			}
 			this.deviceInfo.info = await this.backend.getInfo();
 		},
 

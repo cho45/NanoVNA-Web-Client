@@ -457,8 +457,9 @@
 
 			<md-dialog :md-active.async="showAboutDialog">
 				<md-dialog-title>About</md-dialog-title>
-				<md-dialog-content>
-					<pre style="font-size: 11px; line-height: 1.11;">{{deviceInfo.info}}</pre>
+				<md-dialog-content style="max-width: 100vw">
+					
+					<pre style="font-size: 11px; line-height: 1.11; width: 100%; overflow: auto">{{deviceInfo.info}}</pre>
 					<md-table>
 						<md-table-row>
 							<md-table-head></md-table-head>
@@ -485,6 +486,7 @@
 							</md-table-cell>
 						</md-table-row>
 					</md-table>
+					
 				</md-dialog-content>
 				<md-dialog-actions>
 					<md-button class="" @click="showAboutDialog = false">Close</md-button>
