@@ -15,7 +15,7 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABI
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-import * as Comlink from "./node_modules/comlink/dist/esm/comlink.mjs";
+import * as Comlink from "./lib/comlink/esm/comlink.mjs";
 //const Backend = Comlink.wrap(new Worker("./worker.js", { type: "module" }));
 const Backend = Comlink.wrap(new Worker("./worker.js"));
 
@@ -106,6 +106,28 @@ function calcZr(i) {
 		real: zr,
 		imag: zi
 	};
+}
+
+async function downloadFile(url, name) {
+	if (typeof Capacitor === 'undefined') {
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = name;
+		a.click();
+	} else {
+		const { Filesystem } = Capacitor.Plugins;
+		try {
+			const data = await (await fetch(url)).arrayBuffer();
+			await Filesystem.writeFile({
+				path: name,
+				data: btoa(String.fromCharCode(...new Uint8Array(data))),
+				directory: 'DOCUMENTS',
+				encoding: undefined,
+			});
+		} catch(e) {
+			console.error('Unable to write file', e);
+		}
+	}
 }
 
 new Vue({
@@ -204,7 +226,7 @@ new Vue({
 			info: '',
 		},
 		webVersion: "",
-		serialMode: "serial" in navigator,
+		serialMode: NanoVNA.name.replace(/^NanoVNA_/, ''),
 
 		autoUpdate: 1000,
 		requestStop: true,
@@ -260,7 +282,7 @@ new Vue({
 				this.status = 'connecting'
 				let connected = false;
 				try {
-					if ('serial' in navigator) {
+					if ('serial' in navigator || typeof Capacitor !== 'undefined') {
 						const nanovna = new NanoVNA({
 							onerror: (e) => {
 								this.backend.opts.onerror(String(e));
@@ -283,6 +305,7 @@ new Vue({
 
 				this.deviceInfo.version = await this.backend.getVersion();
 				this.status = 'connected';
+				this.showSnackbar('Connected');
 
 				/*
 				const start = 50e3;
@@ -304,6 +327,9 @@ new Vue({
 
 		disconnect: async function () {
 			this.backend.close();
+			this.requestStop = true;
+			this.autoUpdate = 0;
+			this.updating = false;
 			this.status = 'disconnected';
 		},
 
@@ -480,7 +506,7 @@ new Vue({
 			this.requestStop = true;
 		},
 
-		saveAs: function (format) {
+		saveAs: async function (format) {
 			if (format === 's1p') {
 				const body = [];
 				body.push('# Hz S RI R 50\n');
@@ -489,10 +515,9 @@ new Vue({
 				});
 				const blob = new Blob(body, { type: 'application/octet-stream' });
 				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s1p`;
-				a.click();
+				const name = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s1p`;
+				downloadFile(url, name);
+				this.showSnackbar(`Saved as ${name}`);
 			} else
 			if (format === 's2p') {
 				const body = [];
@@ -504,10 +529,9 @@ new Vue({
 				});
 				const blob = new Blob(body, { type: 'application/octet-stream' });
 				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s2p`;
-				a.click();
+				const name = `nanovna-${strftime('%Y%m%d-%H%M%S')}.s2p`;
+				downloadFile(url, name);
+				this.showSnackbar(`Saved as ${name}`);
 			} else {
 				alert('not implemented');
 			}
@@ -517,10 +541,9 @@ new Vue({
 			const canvas = this.$refs[graph];
 			canvas.toBlob((blob) => {
 				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = this.graph + `-${strftime('%Y%m%d-%H%M%S')}.png`;
-				a.click();
+				const name = `graph-${strftime('%Y%m%d-%H%M%S')}.png`;
+				downloadFile(url, name);
+				this.showSnackbar(`Saved as ${name}`);
 			});
 		},
 
@@ -578,6 +601,12 @@ new Vue({
 			ctx.putImageData(imd, 0, 0);
 			this.captureDownloadHref = canvas.toDataURL();
 			this.capturing = false;
+		},
+
+		downloadCapture: async function () {
+			const name = `nanovna-capture-${strftime('%Y%m%d-%H%M%S')}.png`;
+			downloadFile(this.captureDownloadHref, name);
+			this.showSnackbar(`Saved as ${name}`);
 		},
 
 		calcTDR: async function () {
@@ -720,7 +749,12 @@ new Vue({
 
 		showAbout: async function () {
 			this.showAboutDialog = true;
-			this.webVersion = (await (await fetch('.git/refs/heads/master')).text()).substring(0, 7);
+			if (typeof Capacitor === 'undefined') {
+				this.webVersion = (await (await fetch('.git/refs/heads/master')).text()).substring(0, 7);
+			} else {
+				const info = await Capacitor.Plugins.Device.getInfo();
+				this.webVersion = `${info.appVersion} (${info.platform} ${info.osVersion} ${info.model})`;
+			}
 			this.deviceInfo.info = await this.backend.getInfo();
 		},
 

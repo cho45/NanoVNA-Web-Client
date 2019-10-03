@@ -1,0 +1,7 @@
+{
+  "appId": "net.lowreal.nanovnawebapp",
+  "appName": "NanoVNA WebApp",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "www"
+}
