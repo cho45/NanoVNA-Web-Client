@@ -19,24 +19,6 @@ import * as Comlink from "./lib/comlink/esm/comlink.mjs";
 //const Backend = Comlink.wrap(new Worker("./worker.js", { type: "module" }));
 const Backend = Comlink.wrap(new Worker("./worker.js"));
 
-const SAMPLE_DATA = [
-	{
-		"real": 0.9272064644381,
-		"imag": -0.3014399089958,
-		"freq": 100000000
-	},
-	{
-		"real": 0.9229223881977,
-		"imag": -0.3083542170549,
-		"freq": 100990099
-	},
-	{
-		"real": 0.9183366235677,
-		"imag": -0.3154605235413,
-		"freq": 101980198
-	},
-];
-
 Vue.use(VueMaterial.default);
 
 function colorGen(h, s, l, i) {
@@ -106,6 +88,18 @@ function calcZr(i) {
 		real: zr,
 		imag: zi
 	};
+}
+
+function formatFrequency(freq, f) {
+	if (typeof f === 'undefined') f = 6;
+	if (freq < 1e3) {
+		return (freq) + ' Hz';
+	} else
+	if (freq < 1e6) {
+		return (freq / 1e3).toFixed(Math.min(3, f)) + ' kHz';
+	} else {
+		return (freq / 1e6).toFixed(Math.min(6, f)) + ' MHz';
+	}
 }
 
 async function downloadFile(url, name) {
@@ -182,6 +176,16 @@ new Vue({
 			z: { min: -100, max: 100 },
 		},
 
+		showNumberInput: false,
+		numberInput: {
+			title: 'START',
+			type: 'frequency',
+			input: '1000',
+			units: ['', '', '', 'x1'],
+			unit: 'Hz',
+			result: null,
+		},
+
 		showTraceDialog: false,
 		currentTraceSetting: {
 			show: true,
@@ -234,11 +238,10 @@ new Vue({
 		showResolutionDialog: false,
 
 		range: {
-			focusing: "",
-			start: 0.05,
-			stop: 900,
-			center: 450,
-			span: 900,
+			start: 0.05e6,
+			stop: 900e6,
+			center: 450e6,
+			span: 900e6,
 			segments: 1,
 		}
 	},
@@ -368,10 +371,10 @@ new Vue({
 			const span   = stop - start;
 			const center = span / 2 + start;
 			console.log({start, stop, span, center});
-			this.range.start = start / 1e6;
-			this.range.stop = stop / 1e6;
-			this.range.span = span / 1e6;
-			this.range.center = center / 1e6;
+			this.range.start = start;
+			this.range.stop = stop;
+			this.range.span = span;
+			this.range.center = center;
 
 			const measured0 = await this.backend.getData(0);
 			this.data.ch0.unshift(measured0.map( (complex, i) => ({
@@ -411,8 +414,8 @@ new Vue({
 			this.data.ch0.unshift(measured0);
 			this.data.ch1.unshift(measured1);
 
-			const start = +this.range.start * 1e6;
-			const stop = +this.range.stop * 1e6;
+			const start = +this.range.start;
+			const stop = +this.range.stop;
 			const segments = +this.range.segments;
 			const segmentSize = 101;
 			const points = segmentSize * segments;
@@ -797,7 +800,7 @@ new Vue({
 						callbacks: {
 							label: (item, data) => {
 								const {real, imag, freq} = data.datasets[item.datasetIndex].data[item.index];
-								return `${(freq/1e6).toFixed(3)}MHz ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
+								return `${formatFrequency(freq)} ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
 							}
 						}
 					},
@@ -860,14 +863,12 @@ new Vue({
 						position: "nearest",
 						mode: "index",
 						intersect: false,
-						/*
 						callbacks: {
-							label: (item, data) => {
-								const {real, imag, freq} = data.datasets[item.datasetIndex].data[item.index];
-								return `${(freq/1e6).toFixed(3)}MHz ${real.toFixed(3)} ${imag < 0 ? '-' : '+'} ${Math.abs(imag).toFixed(3)}j`;
+							title: (item, data) => {
+								const freq = data.labels[item[0].index];
+								return `${formatFrequency(freq)}`;
 							}
 						}
-						*/
 					},
 					animation: false,
 					scales: {
@@ -881,7 +882,7 @@ new Vue({
 									callback: (value, index, values) => {
 										const n = index % Math.floor(values.length / 11) === 0 && index < values.length / 11 * 10;
 										if (n || index === values.length - 1) {
-											return (value / 1e6).toFixed(0) + 'MHz';
+											return formatFrequency(value, 0);
 										} else {
 											return null;
 										}
@@ -970,7 +971,7 @@ new Vue({
 					}
 				},
 				data: {
-					labels: SAMPLE_DATA.map( (d) => d.freq ),
+					labels: [],
 					datasets: [
 					]
 				}
@@ -1088,6 +1089,122 @@ new Vue({
 				}
 			});
 		},
+
+		openNumberInput: async function (opts) {
+			this.numberInput.result = '';
+			this.numberInput.title = opts.title || '';
+			this.numberInput.prev  = opts.input || '';
+			this.numberInput.unit = opts.unit || '';
+			this.numberInput.units = opts.units || '';
+			this.numberInput.input = '';
+			this.showNumberInput = true;
+
+			return await new Promise( (resolve, reject) => {
+				const cancel = this.$watch('showNumberInput', () => {
+					cancel();
+					console.log('resolve', this.numberInput.result);
+					resolve(this.numberInput.result);
+				});
+			});
+		},
+
+		formatNumber: function (number, sep) {
+			if (!sep) sep = ',';
+			return String(number).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+		},
+
+		formatFrequency: formatFrequency,
+
+		numberInputButton: function (e) {
+			const UNITS = {
+				'G': 1e9,
+				'M': 1e6,
+				'k': 1e3,
+				'x1' : 1,
+				'm' : 1e-3,
+				'\u00b5' : 1e-6,
+				'n' : 1e-9,
+				'p' : 1e-12,
+			};
+
+			const char = e.target.textContent.replace(/\s+/g, '');
+			console.log(JSON.stringify(char));
+			if (/^[0-9]$/.test(char)) {
+				this.numberInput.input += char;
+			} else
+			if (char === '.') {
+				if (!this.numberInput.input.includes('.')) {
+					this.numberInput.input += char;
+				}
+			} else
+			if (char === '\u232B') {
+				if (this.numberInput.input.length) {
+					this.numberInput.input = this.numberInput.input.slice(0, -1);
+				} else {
+					this.showNumberInput = false;
+				}
+			} else
+			if (char === '-') {
+				if (this.numberInput.input[0] === '-') {
+					this.numberInput.input = this.numberInput.input.slice(1);
+				} else {
+					this.numberInput.input = '-' + this.numberInput.input;
+				}
+			} else
+			if (UNITS[char]) {
+				const base = parseFloat(this.numberInput.input);
+				this.numberInput.result = base * UNITS[char];
+				this.showNumberInput = false;
+			}
+			console.log(this.numberInput.input, parseFloat(this.numberInput.input));
+		},
+
+		updateStartStop: async function () {
+			let [start, stop] = [ +this.range.start, +this.range.stop ];
+			if (start < 0) start = 0;
+			if (stop > 1500e6) stop = 1500e6;
+			const span   = stop - start;
+			const center = span / 2 + start;
+			console.log('updateStartStop', this.range.center, this.range.span, {center, span});
+			this.range.center = center;
+			this.range.span = span;
+			this.data.ch0.length = 0;
+			this.data.ch1.length = 0;
+
+			if (+this.range.segments === 1) {
+				if (this.connected) {
+					await this.backend.setSweep('start', this.range.start);
+					await this.backend.setSweep('stop', this.range.stop);
+				}
+			}
+			this.saveLastStateToLocalStorage();
+		},
+
+		updateCenterSpan: async function () {
+			let [center, span] = [ +this.range.center, +this.range.span ];
+			let start = center - (span / 2);
+			let stop = center + (span / 2);
+			if (start < 0) {
+				this.showSnackbar('Invalid span for center. Reducing span.');
+				console.log('start < 0', {center, span, start, stop});
+				this.range.span = span + start * 2;
+				stop += start;
+				start -= start;
+			}
+			console.log('updateCenterSpan', { start, stop });
+			this.range.start = start;
+			this.range.stop = stop;
+			this.data.ch0.length = 0;
+			this.data.ch1.length = 0;
+
+			if (+this.range.segments === 1) {
+				if (this.connected) {
+					await this.backend.setSweep('center', this.range.center);
+					await this.backend.setSweep('span', this.range.span);
+				}
+			}
+			this.saveLastStateToLocalStorage();
+		},
 	},
 
 	created: function () {
@@ -1111,66 +1228,33 @@ new Vue({
 		const device = await NanoVNA.getDevice();
 		this.connect(device);
 
-		const updateStartStop = async () => {
-			if (+this.range.segments === 1) {
-				if (this.connected && this.range.focusing) {
-					await this.backend.setSweep(this.range.focusing, this.range[this.range.focusing] * 1e6);
-				}
-			} else {
-				if (this.range.focusing === 'start' ||
-					this.range.focusing === 'stop') {
-					const [start, stop] = [ +this.range.start, +this.range.stop ];
-					const span   = stop - start;
-					const center = span / 2 + start;
-					console.log('updateStartStop', this.range.center, this.range.span, {center, span});
-					this.range.center = center;
-					this.range.span = span;
-					this.data.ch0.length = 0;
-					this.data.ch1.length = 0;
-				}
-			}
-			this.saveLastStateToLocalStorage();
-		};
-
-		const updateCenterSpan = async () => {
-			if (+this.range.segments === 1) {
-				if (this.connected && this.range.focusing) {
-					await this.backend.setSweep(this.range.focusing, this.range[this.range.focusing] * 1e6);
-				}
-			} else {
-				if (this.range.focusing === 'center' ||
-					this.range.focusing === 'span') {
-
-					const [center, span] = [ +this.range.center, +this.range.span ];
-					const start = center - (span / 2);
-					const stop = center + (span / 2);
-					console.log('updateCenterSpan', { start, stop });
-					this.range.start = start;
-					this.range.stop = stop;
-					this.data.ch0.length = 0;
-					this.data.ch1.length = 0;
-				}
-			}
-			this.saveLastStateToLocalStorage();
-		};
-
-		this.$watch('range.start', updateStartStop);
-		this.$watch('range.stop', updateStartStop);
-		this.$watch('range.center', updateCenterSpan);
-		this.$watch('range.span', updateCenterSpan);
 		this.$watch('range.segments', () => {
 			this.data.ch0.length = 0;
 			this.data.ch1.length = 0;
 			this.saveLastStateToLocalStorage();
 		});
 
-		let updateTimer;
-		this.$watch('range.focusing', (newVal) => {
-			clearTimeout(updateTimer);
-			if (newVal === "") {
-				updateTimer = setTimeout(() => {
-					this.update();
-				}, 500);
+		document.body.addEventListener('focusin', async (e) => {
+			if (e.target.nodeName !== 'INPUT') return;
+			if (
+				e.target.type !== 'number' &&
+				!e.target.dataset.units
+			) return;
+
+			console.log('focusin', e.target, e.target.nodeName, e.target.type);
+			const units = (e.target.dataset.units || '').split(/\s+/).filter( i => !!i );
+			if (!units.length) units.push('x1');
+			while (units.length < 4) units.unshift('');
+
+			const num = await this.openNumberInput({
+				title: e.target.name,
+				input: e.target.dataset.rawValue || e.target.value,
+				unit: e.target.dataset.unit,
+				units: units
+			});
+			if (typeof num === 'number' && !isNaN(num)) {
+				e.target.__vue__.$emit('input', num);
+				e.target.__vue__.$emit('change', num);
 			}
 		});
 

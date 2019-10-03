@@ -86,6 +86,29 @@
 				vertical-align: top;
 			}
 
+			#numberInputting {
+				font-size: 200%;
+				text-align: right;
+				font-weight: bold;
+				padding: 20px 2px;
+			}
+			
+			#numberInput {
+				width: 100%;
+				table-layout: fixed;
+			}
+
+			#numberInput .md-button {
+				margin: 0;
+				min-width: auto;
+				min-height: 10vh;
+				width: 100%;
+				box-sizing: border-box;
+				background: #efefef;
+				font-size: 200%;
+				text-transform: none;
+			}
+
 			@media (orientation: landscape) {
 				.md-app-content {
 					display: flex;
@@ -207,15 +230,13 @@
 							<div class="md-layout-item md-size-50">
 								<md-field class="">
 									<label>Start</label>
-									<md-input type="number" min="0" max="1000" v-model="range.start" @focus="range.focusing='start'" @blur="range.focusing=''"></md-input>
-									<span class="md-suffix">MHz</span>
+									<md-input type="text" min="0" :value="formatFrequency(range.start)" :data-raw-value="range.start" @change="range.start = $event; updateStartStop()" name="start" data-units="G M k x1" data-unit="Hz"></md-input>
 								</md-field>
 							</div>
 							<div class="md-layout-item md-size-50">
 								<md-field class="">
 									<label>Stop</label>
-									<md-input type="number" min="0" max="1000" v-model="range.stop" @focus="range.focusing='stop'" @blur="range.focusing=''"></md-input>
-									<span class="md-suffix">MHz</span>
+									<md-input type="text" min="0" :value="formatFrequency(range.stop)" :data-raw-value="range.stop" @change="range.stop = $event; updateStartStop()" name="stop" data-units="G M k x1" data-unit="Hz"></md-input>
 								</md-field>
 							</div>
 						</div>
@@ -223,15 +244,13 @@
 							<div class="md-layout-item md-size-50">
 								<md-field class="">
 									<label>Center</label>
-									<md-input type="number" min="0" max="1000" v-model="range.center" @focus="range.focusing='center'" @blur="range.focusing=''"></md-input>
-									<span class="md-suffix">MHz</span>
+									<md-input type="text" min="0" :value="formatFrequency(range.center)" :data-raw-value="range.center" @change="range.center = $event; updateCenterSpan()" name="center" data-units="G M k x1" data-unit="Hz"></md-input>
 								</md-field>
 							</div>
 							<div class="md-layout-item md-size-50">
 								<md-field class="">
 									<label>Span</label>
-									<md-input type="number" min="0" max="1000" v-model="range.span" @focus="range.focusing='span'" @blur="range.focusing=''"></md-input>
-									<span class="md-suffix">MHz</span>
+									<md-input type="text" min="0" :value="formatFrequency(range.span)" :data-raw-value="range.span" @change="range.span = $event; updateCenterSpan()" name="span" data-units="G M k x1" data-unit="Hz"></md-input>
 								</md-field>
 							</div>
 						</div>
@@ -265,7 +284,7 @@
 									<div>Peak: {{peakTDR * (velocityOfSignalPropagation / 100)}}m</div>
 									<md-field class="" style="width: 200px; margin: 0 0 0 auto">
 										<label>Velocity of signal propagation</label>
-										<md-input type="number" min="0" max="100" step="1" v-model="velocityOfSignalPropagation"></md-input>
+										<md-input type="number" min="0" max="100" step="1" v-model="velocityOfSignalPropagation" data-unit="%"></md-input>
 										<span class="md-suffix">%</span>
 									</md-field>
 								</div>
@@ -363,14 +382,14 @@
 								<div class="md-layout-item md-small-size-50">
 									<md-field>
 										<label>Min</label>
-										<md-input v-model="scales[scaleType.key].min"></md-input>
+										<md-input type="number" v-model="scales[scaleType.key].min" data-units="- x1" :data-unit="scaleType.suffix"></md-input>
 										<span class="md-suffix" v-show="scaleType.suffix">{{scaleType.suffix}}</span>
 									</md-field>
 								</div>
 								<div class="md-layout-item md-small-size-50">
 									<md-field>
 										<label>Max</label>
-										<md-input v-model="scales[scaleType.key].max"></md-input>
+										<md-input type="number" v-model="scales[scaleType.key].max" data-units="- x1" :data-unit="scaleType.suffix"></md-input>
 										<span class="md-suffix" v-show="scaleType.suffix">{{scaleType.suffix}}</span>
 									</md-field>
 									</md-field>
@@ -492,6 +511,49 @@
 					<md-button class="" @click="showAboutDialog = false">Close</md-button>
 				</md-dialog-actions>
 			</md-dialog>
+
+
+
+			<md-dialog :md-active.async="showNumberInput" style="max-width: 640px">
+				<md-dialog-title>Input {{ numberInput.title }}</md-dialog-title>
+				<md-dialog-content>
+					<div id="numberInputting">
+						<span class="number" v-if="numberInput.input">{{ formatNumber(numberInput.input) }}</span>
+						<span class="number" v-else style="color: rgba(0,0,0,.54);">{{ formatNumber(numberInput.prev) }}</span>
+						<span class="unit">{{ numberInput.unit }}</span>
+					</div>
+					<table id="numberInput">
+						<tr>
+							<td><md-button class="" @click="numberInputButton">7</md-button></td>
+							<td><md-button class="" @click="numberInputButton">8</md-button></td>
+							<td><md-button class="" @click="numberInputButton">9</md-button></td>
+							<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[0]">{{ numberInput.units[0] }}</md-button></td>
+						</tr>
+						<tr>
+							<td><md-button class="" @click="numberInputButton">4</md-button></td>
+							<td><md-button class="" @click="numberInputButton">5</md-button></td>
+							<td><md-button class="" @click="numberInputButton">6</md-button></td>
+							<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[1]">{{ numberInput.units[1] }}</md-button></td>
+						</tr>
+						<tr>
+							<td><md-button class="" @click="numberInputButton">1</md-button></td>
+							<td><md-button class="" @click="numberInputButton">2</md-button></td>
+							<td><md-button class="" @click="numberInputButton">3</md-button></td>
+							<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[2]">{{ numberInput.units[2] }}</md-button></td>
+						</tr>
+						<tr>
+							<td><md-button class="" @click="numberInputButton">0</md-button></td>
+							<td><md-button class="" @click="numberInputButton">.</md-button></td>
+							<td><md-button class="" @click="numberInputButton">&#x232B;</md-button></td>
+							<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[3]">{{ numberInput.units[3] }}</md-button></td>
+						</tr>
+					</table>
+				</md-dialog-content>
+				<md-dialog-actions>
+					<md-button class="" @click="showNumberInput = false">Cancel</md-button>
+				</md-dialog-actions>
+			</md-dialog>
+
 		</div>
 		<script>
 			window.addEventListener('load', function() {
