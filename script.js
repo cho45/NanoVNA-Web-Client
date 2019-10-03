@@ -21,6 +21,62 @@ const Backend = Comlink.wrap(new Worker("./worker.js"));
 
 Vue.use(VueMaterial.default);
 
+
+//Chart.pluginService.register({
+//	beforeRender: function (chart) {
+//		if (chart.config.options.pinnedTooltips) {
+//			// create an array of tooltips
+//			// we can't use the chart tooltip because there is only one tooltip per chart
+//			chart.pluginTooltips = [];
+//
+//			const indexes = chart.config.options.pinnedTooltips.map( (freq) => {
+//				return chart.data.labels.findIndex( (f) => f >= freq );
+//			});
+//
+//			const pointRadius = [], pointStyle = [];
+//			for (let target of indexes) {
+//				pointRadius[target] = 5;
+//				pointStyle[target] = 'rectRot';
+//
+//				const active = chart.config.data.datasets.map( (_, i) => chart.getDatasetMeta(i).data[target] );
+//
+//				if (active[0]) {
+//					chart.pluginTooltips.push(new Chart.Tooltip({
+//						_chart: chart.chart,
+//						_chartInstance: chart,
+//						_data: chart.data,
+//						_options: chart.options.tooltips,
+//						_active: active,
+//					}, chart));
+//				}
+//			}
+//
+//			for (let dataset of chart.data.datasets) {
+//				dataset.pointRadius = pointRadius;
+//				dataset.pointStyle = pointStyle;
+//			}
+//		}
+//	},
+//	afterDraw: function (chart, easing) {
+//		if (chart.config.options.pinnedTooltips) {
+//			// we don't want the permanent tooltips to animate, so don't do anything till the animation runs atleast once
+//			if (!chart.allTooltipsOnce) {
+//				if (easing !== 1)
+//					return;
+//				chart.allTooltipsOnce = true;
+//			}
+//
+//			Chart.helpers.each(chart.pluginTooltips, function (tooltip) {
+//				tooltip.initialize();
+//				tooltip.update();
+//				// we don't actually need this since we are not animating tooltips
+//				tooltip.pivot();
+//				tooltip.transition(easing).draw();
+//			});
+//		}
+//	}
+//});
+
 function colorGen(h, s, l, i) {
 	if (!h) h = 0;
 	if (!s) s = 60;
@@ -829,6 +885,8 @@ new Vue({
 			this.freqChart = new Chart(this.$refs.freq.getContext('2d'), {
 				type: 'line',
 				options: {
+					pinnedTooltips: [400e6, 850e6],
+
 					responsive: true,
 					maintainAspectRatio: false,
 					legend: {
@@ -858,14 +916,19 @@ new Vue({
 					},
 					tooltips: {
 						enabled: true,
-						position: "nearest",
+						position: "average",
 						mode: "index",
 						intersect: false,
 						callbacks: {
 							title: (item, data) => {
 								const freq = data.labels[item[0].index];
 								return `${formatFrequency(freq)}`;
-							}
+							},
+							label: (item, data) => {
+								const datasets = data.datasets[item.datasetIndex];
+								const value = data.datasets[item.datasetIndex].data[item.index];
+								return `${datasets.label}: ${value.toFixed(3)} ${datasets.suffix}`;
+							},
 						}
 					},
 					animation: false,
@@ -1266,17 +1329,17 @@ new Vue({
 			const axisSet = new Set();
 			for (let trace of this.traces) {
 				if (!trace.show) continue;
-				const [chart, func, yAxisID] = {
-					'smith': [this.smithChart, calcZr, undefined],
-					'logmag': [this.freqChart, calcLogMag, 'y-axis-dB'],
-					'phase': [this.freqChart, calcPhase, 'y-axis-phase'],
-					'swr': [this.freqChart, calcSWR, 'y-axis-swr'],
-					'linear': [this.freqChart, calcLinear, 'y-axis-z'],
-					'real': [this.freqChart, calcReal, 'y-axis-z'],
-					'imag': [this.freqChart, calcImag, 'y-axis-z'],
-					'R': [this.freqChart, calcZR, 'y-axis-z'],
-					'X': [this.freqChart, calcZX, 'y-axis-z'],
-					'Z': [this.freqChart, calcZabs, 'y-axis-z'],
+				const [chart, func, yAxisID, suffix] = {
+					'smith': [this.smithChart, calcZr, undefined, ''],
+					'logmag': [this.freqChart, calcLogMag, 'y-axis-dB', 'dB'],
+					'phase': [this.freqChart, calcPhase, 'y-axis-phase', '\u00b0'],
+					'swr': [this.freqChart, calcSWR, 'y-axis-swr', ''],
+					'linear': [this.freqChart, calcLinear, 'y-axis-z', ''],
+					'real': [this.freqChart, calcReal, 'y-axis-z', ''],
+					'imag': [this.freqChart, calcImag, 'y-axis-z', ''],
+					'R': [this.freqChart, calcZR, 'y-axis-z', '\u03a9'],
+					'X': [this.freqChart, calcZX, 'y-axis-z', '\u03a9'],
+					'Z': [this.freqChart, calcZabs, 'y-axis-z', '\u03a9'],
 				}[trace.format];
 
 				if (yAxisID) axisSet.add(yAxisID);
@@ -1288,6 +1351,7 @@ new Vue({
 					borderColor: trace.color,
 					backgroundColor: trace.color,
 					data: [],
+					suffix: suffix,
 					yAxisID: yAxisID
 				});
 				chart.update();
