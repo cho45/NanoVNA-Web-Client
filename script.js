@@ -370,7 +370,6 @@ new Vue({
 			const start = freqs[0], stop = freqs[freqs.length-1];
 			const span   = stop - start;
 			const center = span / 2 + start;
-			console.log({start, stop, span, center});
 			this.range.start = start;
 			this.range.stop = stop;
 			this.range.span = span;
@@ -392,7 +391,6 @@ new Vue({
 			this.updating = false;
 
 			const maxAvgCount = Math.max(...this.traces.map( (i) => i.avgCount || 0 )) || 1;
-			console.log(this.data);
 			this.data.ch0 = this.data.ch0.slice(0, maxAvgCount);
 			this.data.ch1 = this.data.ch1.slice(0, maxAvgCount);
 
@@ -1229,6 +1227,7 @@ new Vue({
 		this.connect(device);
 
 		this.$watch('range.segments', () => {
+			this.stop();
 			this.data.ch0.length = 0;
 			this.data.ch1.length = 0;
 			this.saveLastStateToLocalStorage();

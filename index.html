@@ -517,37 +517,40 @@
 			<md-dialog :md-active.async="showNumberInput" style="max-width: 640px">
 				<md-dialog-title>Input {{ numberInput.title }}</md-dialog-title>
 				<md-dialog-content>
-					<div id="numberInputting">
-						<span class="number" v-if="numberInput.input">{{ formatNumber(numberInput.input) }}</span>
-						<span class="number" v-else style="color: rgba(0,0,0,.54);">{{ formatNumber(numberInput.prev) }}</span>
-						<span class="unit">{{ numberInput.unit }}</span>
+					<div style="height: 100%; width: 100%; display: flex; flex-direction: column">
+						<div style="flex: 1">{{ numberInput.description || '' }}</div>
+						<div id="numberInputting">
+							<span class="number" v-if="numberInput.input">{{ formatNumber(numberInput.input) }}</span>
+							<span class="number" v-else style="color: rgba(0,0,0,.54);">{{ formatNumber(numberInput.prev) }}</span>
+							<span class="unit">{{ numberInput.unit }}</span>
+						</div>
+						<table id="numberInput">
+							<tr>
+								<td><md-button class="" @click="numberInputButton">7</md-button></td>
+								<td><md-button class="" @click="numberInputButton">8</md-button></td>
+								<td><md-button class="" @click="numberInputButton">9</md-button></td>
+								<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[0]">{{ numberInput.units[0] }}</md-button></td>
+							</tr>
+							<tr>
+								<td><md-button class="" @click="numberInputButton">4</md-button></td>
+								<td><md-button class="" @click="numberInputButton">5</md-button></td>
+								<td><md-button class="" @click="numberInputButton">6</md-button></td>
+								<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[1]">{{ numberInput.units[1] }}</md-button></td>
+							</tr>
+							<tr>
+								<td><md-button class="" @click="numberInputButton">1</md-button></td>
+								<td><md-button class="" @click="numberInputButton">2</md-button></td>
+								<td><md-button class="" @click="numberInputButton">3</md-button></td>
+								<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[2]">{{ numberInput.units[2] }}</md-button></td>
+							</tr>
+							<tr>
+								<td><md-button class="" @click="numberInputButton">0</md-button></td>
+								<td><md-button class="" @click="numberInputButton">.</md-button></td>
+								<td><md-button class="" @click="numberInputButton">&#x232B;</md-button></td>
+								<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[3]">{{ numberInput.units[3] }}</md-button></td>
+							</tr>
+						</table>
 					</div>
-					<table id="numberInput">
-						<tr>
-							<td><md-button class="" @click="numberInputButton">7</md-button></td>
-							<td><md-button class="" @click="numberInputButton">8</md-button></td>
-							<td><md-button class="" @click="numberInputButton">9</md-button></td>
-							<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[0]">{{ numberInput.units[0] }}</md-button></td>
-						</tr>
-						<tr>
-							<td><md-button class="" @click="numberInputButton">4</md-button></td>
-							<td><md-button class="" @click="numberInputButton">5</md-button></td>
-							<td><md-button class="" @click="numberInputButton">6</md-button></td>
-							<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[1]">{{ numberInput.units[1] }}</md-button></td>
-						</tr>
-						<tr>
-							<td><md-button class="" @click="numberInputButton">1</md-button></td>
-							<td><md-button class="" @click="numberInputButton">2</md-button></td>
-							<td><md-button class="" @click="numberInputButton">3</md-button></td>
-							<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[2]">{{ numberInput.units[2] }}</md-button></td>
-						</tr>
-						<tr>
-							<td><md-button class="" @click="numberInputButton">0</md-button></td>
-							<td><md-button class="" @click="numberInputButton">.</md-button></td>
-							<td><md-button class="" @click="numberInputButton">&#x232B;</md-button></td>
-							<td><md-button class="" @click="numberInputButton" v-show="numberInput.units[3]">{{ numberInput.units[3] }}</md-button></td>
-						</tr>
-					</table>
 				</md-dialog-content>
 				<md-dialog-actions>
 					<md-button class="" @click="showNumberInput = false">Cancel</md-button>
