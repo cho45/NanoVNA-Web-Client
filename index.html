@@ -150,6 +150,16 @@
 					<md-toolbar class="md-transparent" md-elevation="0">Actions</md-toolbar>
 
 					<md-list>
+						<md-subheader>Graph</md-subheader>
+						<md-list-item @click="showScaleDialog = true">
+							<md-icon>height</md-icon>
+							<span class="md-list-item-text">Setup Scales</span>
+						</md-list-item>
+						<md-list-item @click="addTrace">
+							<md-icon>add</md-icon>
+							<span class="md-list-item-text">Add Trace</span>
+						</md-list-item>
+
 						<md-subheader>Device</md-subheader>
 						<md-list-item @click="connect()" v-show="disconnected">
 							<md-icon>usb</md-icon>
