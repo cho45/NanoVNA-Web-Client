@@ -11,6 +11,8 @@ cap:
 	ln -sf $(PWD)/images www
 	ln -sf $(PWD)/dsp-wasm www
 	cp -RL lib www/lib
+	rm -r www/lib/webdfu
+	sh -c 'rm www/lib/theme/*.scss www/lib/theme/*/*.scss'
 	npx cap copy
 
 res:
