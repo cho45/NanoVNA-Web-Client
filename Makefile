@@ -25,4 +25,5 @@ res:
 	convert images/splash.png -gravity center -resize 720x1280^ -extent 720x1280 ./android/app/src/main/res/drawable-port-xhdpi/splash.png
 	convert images/splash.png -gravity center -resize 960x1600^ -extent 960x1600 ./android/app/src/main/res/drawable-port-xxhdpi/splash.png
 	convert images/splash.png -gravity center -resize 1280x1920^ -extent 1280x1920 ./android/app/src/main/res/drawable-port-xxxhdpi/splash.png
+	optipng $(wildcard ./android/app/src/main/res/*/splash.png)
 
