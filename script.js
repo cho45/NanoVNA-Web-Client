@@ -16,11 +16,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 */
 
 import * as Comlink from "./lib/comlink/esm/comlink.mjs";
-//const Backend = Comlink.wrap(new Worker("./worker.js", { type: "module" }));
-const Backend = Comlink.wrap(new Worker("./worker.js"));
 
 Vue.use(VueMaterial.default);
-
 
 Chart.pluginService.register({
 	beforeRender: function (chart) {
@@ -1333,6 +1330,9 @@ new Vue({
 	},
 
 	mounted: async function () {
+		//const Backend = Comlink.wrap(new Worker("./worker.js", { type: "module" }));
+		const Backend = Comlink.wrap(new Worker("./worker.js"));
+
 		this.colorGen = colorGen();
 
 		this.backend = await new Backend();
