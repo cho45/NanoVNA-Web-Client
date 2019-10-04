@@ -151,6 +151,10 @@
 
 					<md-list>
 						<md-subheader>Graph</md-subheader>
+						<md-list-item @click="showMarkerDialog = true">
+							<md-icon>label</md-icon>
+							<span class="md-list-item-text">Setup Markers</span>
+						</md-list-item>
 						<md-list-item @click="showScaleDialog = true">
 							<md-icon>height</md-icon>
 							<span class="md-list-item-text">Setup Scales</span>
@@ -481,6 +485,34 @@
 				</md-dialog-content>
 				<md-dialog-actions>
 					<md-button class="" @click="showResolutionDialog = false">Close</md-button>
+				</md-dialog-actions>
+			</md-dialog>
+
+			<md-dialog :md-active.async="showMarkerDialog">
+				<md-dialog-title>Marker Settings</md-dialog-title>
+				<md-dialog-content>
+					<md-list>
+						<md-list-item v-for="marker in markers">
+							<md-icon class="md-primary">label</md-icon>
+							<div class="md-list-item-text">
+								<span>{{ formatFrequency(marker.freq) }}</span>
+							</div>
+							<md-button class="md-icon-button md-list-action" @click="removeMarker(marker)">
+								<md-icon>delete</md-icon>
+							</md-button>
+						</md-list-item>
+					</md-list>
+
+					<div style="display: flex; align-items: center; justify-content: center;">
+						<md-field tyle="flex: 1;">
+							<label>Frequency:</label>
+							<md-input class="" type="text" min="0" placeholder="MHz" :value="newMarker.freq ? formatFrequency(newMarker.freq) : ''" :data-raw-value="newMarker.freq" @change="newMarker.freq = $event;" name="marker" data-units="G M k x1" data-unit="Hz"></md-input>
+						</md-field>
+						<md-button class="md-raised" @click="addMarker">Add</md-button>
+					</div>
+				</md-dialog-content>
+				<md-dialog-actions>
+					<md-button class="" @click="showMarkerDialog = false">Close</md-button>
 				</md-dialog-actions>
 			</md-dialog>
 

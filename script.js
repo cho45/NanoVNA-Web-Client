@@ -22,60 +22,90 @@ const Backend = Comlink.wrap(new Worker("./worker.js"));
 Vue.use(VueMaterial.default);
 
 
-//Chart.pluginService.register({
-//	beforeRender: function (chart) {
-//		if (chart.config.options.pinnedTooltips) {
-//			// create an array of tooltips
-//			// we can't use the chart tooltip because there is only one tooltip per chart
-//			chart.pluginTooltips = [];
-//
-//			const indexes = chart.config.options.pinnedTooltips.map( (freq) => {
-//				return chart.data.labels.findIndex( (f) => f >= freq );
-//			});
-//
-//			const pointRadius = [], pointStyle = [];
-//			for (let target of indexes) {
-//				pointRadius[target] = 5;
-//				pointStyle[target] = 'rectRot';
-//
-//				const active = chart.config.data.datasets.map( (_, i) => chart.getDatasetMeta(i).data[target] );
-//
-//				if (active[0]) {
-//					chart.pluginTooltips.push(new Chart.Tooltip({
-//						_chart: chart.chart,
-//						_chartInstance: chart,
-//						_data: chart.data,
-//						_options: chart.options.tooltips,
-//						_active: active,
-//					}, chart));
-//				}
-//			}
-//
-//			for (let dataset of chart.data.datasets) {
-//				dataset.pointRadius = pointRadius;
-//				dataset.pointStyle = pointStyle;
-//			}
-//		}
-//	},
-//	afterDraw: function (chart, easing) {
-//		if (chart.config.options.pinnedTooltips) {
-//			// we don't want the permanent tooltips to animate, so don't do anything till the animation runs atleast once
-//			if (!chart.allTooltipsOnce) {
-//				if (easing !== 1)
-//					return;
-//				chart.allTooltipsOnce = true;
-//			}
-//
-//			Chart.helpers.each(chart.pluginTooltips, function (tooltip) {
-//				tooltip.initialize();
-//				tooltip.update();
-//				// we don't actually need this since we are not animating tooltips
-//				tooltip.pivot();
-//				tooltip.transition(easing).draw();
-//			});
-//		}
-//	}
-//});
+Chart.pluginService.register({
+	beforeRender: function (chart) {
+		if (chart.config.options.pinnedTooltips) {
+			// create an array of tooltips
+			// we can't use the chart tooltip because there is only one tooltip per chart
+			chart.pluginTooltips = [];
+
+			const indexes = chart.config.options.pinnedTooltips.map( (freq) => {
+				return chart.data.labels.findIndex( (f) => f >= freq );
+			});
+
+			const pointRadius = [], pointStyle = [];
+			for (let target of indexes) {
+				pointRadius[target] = 5;
+				pointStyle[target] = 'rectRot';
+
+				const active = chart.config.data.datasets.map( (_, i) => chart.getDatasetMeta(i).data[target] );
+
+				if (active[0]) {
+					chart.pluginTooltips.push(new Chart.Tooltip({
+						_chart: chart.chart,
+						_chartInstance: chart,
+						_data: chart.data,
+						_options: chart.options.tooltips,
+						_active: active,
+					}, chart));
+				}
+			}
+
+			for (let dataset of chart.data.datasets) {
+				dataset.pointRadius = pointRadius;
+				dataset.pointStyle = pointStyle;
+			}
+		}
+	},
+	afterDraw: function (chart, easing) {
+		if (chart.config.options.pinnedTooltips) {
+			// we don't want the permanent tooltips to animate, so don't do anything till the animation runs atleast once
+			if (!chart.allTooltipsOnce) {
+				if (easing !== 1)
+					return;
+				chart.allTooltipsOnce = true;
+			}
+
+			Chart.helpers.each(chart.pluginTooltips, function (tooltip) {
+				tooltip.initialize();
+				tooltip.update();
+				// we don't actually need this since we are not animating tooltips
+				tooltip.pivot();
+				tooltip.transition(easing).draw();
+			});
+		}
+	}
+});
+Chart.Tooltip.positioners.custom = function (elements, eventPosition) {
+	if (!elements.length) {
+		return false;
+	}
+
+	var i, len;
+	var x = 0;
+	var y = 0;
+	var count = 0;
+
+	for (i = 0, len = elements.length; i < len; ++i) {
+		var el = elements[i];
+		if (el && el.hasValue()) {
+			var pos = el.tooltipPosition();
+			x += pos.x;
+			y += pos.y;
+			++count;
+		}
+	}
+
+	x /= count;
+	y /= count;
+
+	if (y < 0) y = 0;
+
+	return {
+		x: x,
+		y: y,
+	};
+};
 
 function colorGen(h, s, l, i) {
 	if (!h) h = 0;
@@ -274,6 +304,13 @@ new Vue({
 
 		velocityOfSignalPropagation: 70,
 		peakTDR: 0,
+
+		showMarkerDialog: false,
+		markers: [
+		],
+		newMarker: {
+			freq: 0
+		},
 
 		freqs: [],
 		data: {
@@ -748,6 +785,7 @@ new Vue({
 			}
 			if (this.graphSelected === 'smith') {
 				if (!this.smithChart.data.datasets.length) return;
+				this.smithChart.data.labels = this.freqs;
 				this.smithChart.update();
 			}
 			if (this.graphSelected === 'tdr') {
@@ -777,6 +815,7 @@ new Vue({
 				traces: this.traces,
 				scales: this.scales,
 				range: this.range,
+				markers: this.markers,
 			};
 			console.log('save to localStorage', saving);
 			localStorage.setItem('nanovna', JSON.stringify(saving));
@@ -801,6 +840,9 @@ new Vue({
 			}
 			if (saved.range) {
 				this.range = saved.range;
+			}
+			if (saved.markers) {
+				this.markers = saved.markers;
 			}
 		},
 
@@ -885,7 +927,7 @@ new Vue({
 			this.freqChart = new Chart(this.$refs.freq.getContext('2d'), {
 				type: 'line',
 				options: {
-					pinnedTooltips: [400e6, 850e6],
+					pinnedTooltips: [],
 
 					responsive: true,
 					maintainAspectRatio: false,
@@ -916,7 +958,7 @@ new Vue({
 					},
 					tooltips: {
 						enabled: true,
-						position: "average",
+						position: "custom",
 						mode: "index",
 						intersect: false,
 						callbacks: {
@@ -1266,6 +1308,23 @@ new Vue({
 			}
 			this.saveLastStateToLocalStorage();
 		},
+
+		addMarker: function () {
+			this.markers.push(Object.assign({}, this.newMarker));
+			this.markers.sort( (a, b) => a.freq - b.freq);
+			this.newMarker.freq = 0;
+			this.saveLastStateToLocalStorage();
+		},
+
+		removeMarker: function (marker) {
+			for (var i = 0, len = this.markers.length; i < len; i++) {
+				if (this.markers[i] === marker) {
+					this.markers.splice(i, 1);
+					break;
+				}
+			}
+			this.saveLastStateToLocalStorage();
+		}
 	},
 
 	created: function () {
@@ -1418,6 +1477,14 @@ new Vue({
 			if (this.TDRChart) {
 				this.TDRChart.update();
 			}
+		});
+
+		this.$watch('markers', () => {
+			this.freqChart.config.options.pinnedTooltips = this.markers.map( (m) => m.freq );
+			this.freqChart.update();
+
+			this.smithChart.config.options.pinnedTooltips = this.markers.map( (m) => m.freq );
+			this.smithChart.update();
 		});
 
 		this.traces = [
