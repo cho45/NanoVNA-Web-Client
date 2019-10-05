@@ -1321,7 +1321,15 @@ new Vue({
 				}
 			}
 			this.saveLastStateToLocalStorage();
-		}
+		},
+
+		quit: function () {
+			if (typeof Capacitor === 'undefined') {
+				window.close();
+			} else {
+				Capacitor.Plugins.App.exitApp();
+			}
+		},
 	},
 
 	created: function () {
