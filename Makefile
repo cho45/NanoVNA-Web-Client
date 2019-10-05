@@ -13,7 +13,8 @@ cap:
 	cp -RL lib www/lib
 	rm -r www/lib/webdfu
 	sh -c 'rm www/lib/theme/*.scss www/lib/theme/*/*.scss'
-	npx cap copy
+	npm install
+	npx cap sync
 
 res:
 	convert images/splash.png -gravity center -resize 480x320^ -extent 480x320 ./android/app/src/main/res/drawable/splash.png

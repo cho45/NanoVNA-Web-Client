@@ -9,12 +9,24 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name: Install ghr
+      run: |
+        cd /tmp
+        wget https://github.com/tcnksm/ghr/releases/download/v0.13.0/ghr_v0.13.0_linux_amd64.tar.gz
+        tar xvf ghr_v0.13.0_linux_amd64.tar.gz 
+        sudo cp ghr_v0.13.0_linux_amd64/ghr /usr/local/bin/ghr
+        ghr --version
     - name: Build
       run: |
-        docker run \
-        -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
-        jekyll/builder:latest /bin/bash -c "chmod 777 /srv/jekyll && jekyll build --future"
-        
         docker run --rm \
         --volume ${{ github.workspace }}:/project --workdir /project \
-        cho45/android-build:latest make android
+        cho45/android-build-capacitor:latest make android
+    - name: Upload to release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        commit=$(git rev-parse --short HEAD)
+        cp ${{ github.workspace }}/android/app/build/outputs/apk/debug/app-debug.apk /tmp/NanoVNA-WebApp-nightly-$commit.apk
+        ghr -u cho45 -r NanoVNA-Web-Client -recreate -replace -n latest -b "latest" latest /tmp/NanoVNA-WebApp-nightly-$commit.apk
+     
+        
