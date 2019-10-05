@@ -509,13 +509,7 @@
 						</md-list-item>
 					</md-list>
 
-					<div style="display: flex; align-items: center; justify-content: center;">
-						<md-field tyle="flex: 1;">
-							<label>Frequency:</label>
-							<md-input class="" type="text" min="0" placeholder="MHz" :value="newMarker.freq ? formatFrequency(newMarker.freq) : ''" :data-raw-value="newMarker.freq" @change="newMarker.freq = $event;" name="marker" data-units="G M k x1" data-unit="Hz"></md-input>
-						</md-field>
-						<md-button class="md-raised" @click="addMarker">Add</md-button>
-					</div>
+					<md-button class="md-raised" @click="addMarker">Add</md-button>
 				</md-dialog-content>
 				<md-dialog-actions>
 					<md-button class="" @click="showMarkerDialog = false">Close</md-button>

@@ -1306,11 +1306,21 @@ new Vue({
 			this.saveLastStateToLocalStorage();
 		},
 
-		addMarker: function () {
-			this.markers.push(Object.assign({}, this.newMarker));
-			this.markers.sort( (a, b) => a.freq - b.freq);
-			this.newMarker.freq = 0;
-			this.saveLastStateToLocalStorage();
+		addMarker: async function () {
+			const num = await this.openNumberInput({
+				title: 'New marker frequency',
+				input: '',
+				unit: 'Hz',
+				units: ['G', 'M', 'k', '1x'],
+			});
+			if (typeof num === 'number' && !isNaN(num)) {
+				this.newMarker.freq = num;
+
+				this.markers.push(Object.assign({}, this.newMarker));
+				this.markers.sort( (a, b) => a.freq - b.freq);
+				this.newMarker.freq = 0;
+				this.saveLastStateToLocalStorage();
+			}
 		},
 
 		removeMarker: function (marker) {
