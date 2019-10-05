@@ -164,6 +164,10 @@
 							<md-icon>add</md-icon>
 							<span class="md-list-item-text">Add Trace</span>
 						</md-list-item>
+						<md-list-item @click="changeSegments" :disabled="!connected">
+							<md-icon>gradient</md-icon>
+							<span class="md-list-item-text">Resolution...</span>
+						</md-list-item>
 
 						<md-subheader>Device</md-subheader>
 						<md-list-item @click="connect()" v-show="disconnected">
@@ -177,10 +181,6 @@
 						<md-list-item @click="disconnect()" v-show="connected">
 							<md-icon>cancel</md-icon>
 							<span class="md-list-item-text">Disconnect</span>
-						</md-list-item>
-						<md-list-item @click="showResolutionDialog = true" :disabled="!connected">
-							<md-icon>gradient</md-icon>
-							<span class="md-list-item-text">Resolution...</span>
 						</md-list-item>
 						<md-subheader>Save</md-subheader>
 						<md-list-item @click="saveAs('s1p')" :disabled="!connected">
@@ -476,24 +476,6 @@
 				</md-dialog-actions>
 			</md-dialog>
 
-			<md-dialog :md-active.async="showResolutionDialog">
-				<md-dialog-title>Custom Resolution</md-dialog-title>
-				<md-dialog-content>
-					<p>By increasing the number of segments:</p>
-					<ul>
-						<li>Increases the number of measurement points and frequency resolution.</li>
-						<li>Measurement time increases.</li>
-					</ul>
-					<md-field class="">
-						<label>Segments (Total measuring point is 101 * number of segments)</label>
-						<md-input type="number" min="1" max="100" v-model="range.segments"></md-input>
-					</md-field>
-				</md-dialog-content>
-				<md-dialog-actions>
-					<md-button class="" @click="showResolutionDialog = false">Close</md-button>
-				</md-dialog-actions>
-			</md-dialog>
-
 			<md-dialog :md-active.async="showMarkerDialog">
 				<md-dialog-title>Marker Settings</md-dialog-title>
 				<md-dialog-content>
@@ -560,7 +542,12 @@
 				<md-dialog-title>Input {{ numberInput.title }}</md-dialog-title>
 				<md-dialog-content>
 					<div style="height: 100%; width: 100%; display: flex; flex-direction: column">
-						<div style="flex: 1">{{ numberInput.description || '' }}</div>
+						<div style="flex: 1">
+							<div v-html="numberInput.descriptionHtml" v-if="numberInput.descriptionHtml"></div>
+							<div v-else>
+								{{ numberInput.description || '' }}
+							</div>
+						</div>
 						<div id="numberInputting">
 							<span class="number" v-if="numberInput.input">{{ formatNumber(numberInput.input) }}</span>
 							<span class="number" v-else style="color: rgba(0,0,0,.54);">{{ formatNumber(numberInput.prev) }}</span>

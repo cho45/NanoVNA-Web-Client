@@ -325,8 +325,6 @@ new Vue({
 		autoUpdate: 1000,
 		requestStop: true,
 
-		showResolutionDialog: false,
-
 		range: {
 			start: 0.05e6,
 			stop: 900e6,
@@ -1193,6 +1191,8 @@ new Vue({
 		openNumberInput: async function (opts) {
 			this.numberInput.result = '';
 			this.numberInput.title = opts.title || '';
+			this.numberInput.description = opts.description || '';
+			this.numberInput.descriptionHtml = opts.descriptionHtml || '';
 			this.numberInput.prev  = opts.input || '';
 			this.numberInput.unit = opts.unit || '';
 			this.numberInput.units = opts.units || '';
@@ -1304,6 +1304,25 @@ new Vue({
 				}
 			}
 			this.saveLastStateToLocalStorage();
+		},
+
+		changeSegments: async function () {
+			const num = await this.openNumberInput({
+				title: 'Segments',
+				descriptionHtml: `
+					<p>By increasing the number of segments:</p>
+					<ul>
+						<li>Increases the number of measurement points and frequency resolution.</li>
+						<li>Measurement time increases.</li>
+					</ul>
+				`,
+				input: this.range.segments,
+				unit: 'Segments',
+				units: ['', '', '', 'x1'],
+			});
+			if (typeof num === 'number' && !isNaN(num)) {
+				this.range.segments = ~~num;
+			}
 		},
 
 		addMarker: async function () {
