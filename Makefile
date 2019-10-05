@@ -6,10 +6,10 @@ all:
 cap:
 	rm -rf www
 	mkdir www
-	ln -sf $(wildcard $(PWD)/*.js) www
-	ln -sf $(wildcard $(PWD)/*.html) www
-	ln -sf $(PWD)/images www
-	ln -sf $(PWD)/dsp-wasm www
+	ln -sf $(wildcard $(CURDIR)/*.js) www
+	ln -sf $(wildcard $(CURDIR)/*.html) www
+	ln -sf $(CURDIR)/images www
+	ln -sf $(CURDIR)/dsp-wasm www
 	cp -RL lib www/lib
 	rm -r www/lib/webdfu
 	sh -c 'rm www/lib/theme/*.scss www/lib/theme/*/*.scss'
@@ -28,4 +28,8 @@ res:
 	convert images/splash.png -gravity center -resize 960x1600^ -extent 960x1600 ./android/app/src/main/res/drawable-port-xxhdpi/splash.png
 	convert images/splash.png -gravity center -resize 1280x1920^ -extent 1280x1920 ./android/app/src/main/res/drawable-port-xxxhdpi/splash.png
 	optipng $(wildcard ./android/app/src/main/res/*/splash.png)
+
+
+android: cap
+	cd android && ./gradlew assembleDebug
 
