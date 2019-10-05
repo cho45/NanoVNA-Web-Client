@@ -77,14 +77,29 @@ See also <a href="https://developer.mozilla.org/en-US/docs/WebAssembly/Rust_to_w
 
 # Android App
 
-build with capacitor:
+# Install
+
+Play Store: TBD
+
+# Install latest nightly
+
+<img src="https://chart.apis.google.com/chart?cht=qr&chs=200x200&chl=https://github.com/cho45/NanoVNA-Web-Client/releases/tag/latest">
+
+https://github.com/cho45/NanoVNA-Web-Client/releases/tag/latest
+
+Download \*.apk from your android.
+
+notes:
+ * Uninstall release build before installing lastest nightly.
+
+# Open with Android Studio
 
 ```
 $ make cap
 $ npx cap open android
 ```
 
-## release
+## (relen)
 
  * Edit android/app/build.gradle and increment version
  * Build -> Generate Signed Bundle / APK
