@@ -79,7 +79,7 @@ See also <a href="https://developer.mozilla.org/en-US/docs/WebAssembly/Rust_to_w
 
 # Install
 
-Play Store: TBD
+Play Store: https://play.google.com/store/apps/details?id=net.lowreal.nanovnawebapp
 
 # Install latest nightly
 
