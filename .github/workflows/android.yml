@@ -21,7 +21,7 @@ jobs:
         docker run --rm \
         --volume ${{ github.workspace }}:/project --workdir /project \
         cho45/android-build-capacitor:latest make android
-        find ${{ github.workspace }}/android/app -print
+        find ${{ github.workspace }}/android/app/app/src/main -print
     - name: Upload to release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
