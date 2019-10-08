@@ -19,3 +19,26 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep public class org.apache.cordova.CordovaPlugin
+-keep public class fr.drangies.cordova.serial.**
+#-keep public class android.hardware.usb.UsbDevice
+-keepclasseswithmembers public class com.getcapacitor.plugin.App {
+    static *;
+    public *;
+}
+-keepclasseswithmembers public class com.getcapacitor.plugin.Device {
+    static *;
+    public *;
+}
+-keepclasseswithmembers public class com.getcapacitor.plugin.Filesystem {
+    static *;
+    public *;
+}
+-keepclasseswithmembers class com.hoho.android.usbserial.driver.** {
+    static *;
+    public *;
+}
+
+-printconfiguration /tmp/full-r8-config.txt
+-printusage /tmp/usage.txt
