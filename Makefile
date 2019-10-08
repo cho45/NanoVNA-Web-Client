@@ -12,16 +12,16 @@ cap:
 	ln -sf $(CURDIR)/dsp-wasm www
 	cp -RL lib www/lib
 	rm -r www/lib/webdfu
-	rm $(wildcard www/lib/comlink/*/node-adapter.*)
-	rm $(wildcard www/lib/comlink/*/*.ts)
-	rm $(wildcard www/lib/comlink/*/*.map)
-	rm $(wildcard www/lib/material-design-icons-iconfont/fonts/*.json)
-	rm $(wildcard www/lib/material-design-icons-iconfont/fonts/*.ttf)
-	rm $(wildcard www/lib/material-design-icons-iconfont/fonts/*.eot)
-	rm $(wildcard www/lib/material-design-icons-iconfont/fonts/*.woff)
-	rm $(wildcard www/lib/theme/*.scss)
-	rm $(wildcard www/lib/theme/*/*.scss)
-	rm $(wildcard www/lib/theme/black-green-*.css)
+	rm -f $(wildcard www/lib/comlink/*/node-adapter.*)
+	rm -f $(wildcard www/lib/comlink/*/*.ts)
+	rm -f $(wildcard www/lib/comlink/*/*.map)
+	rm -f $(wildcard www/lib/material-design-icons-iconfont/fonts/*.json)
+	rm -f $(wildcard www/lib/material-design-icons-iconfont/fonts/*.ttf)
+	rm -f $(wildcard www/lib/material-design-icons-iconfont/fonts/*.eot)
+	rm -f $(wildcard www/lib/material-design-icons-iconfont/fonts/*.woff)
+	rm -f $(wildcard www/lib/theme/*.scss)
+	rm -f $(wildcard www/lib/theme/*/*.scss)
+	rm -f $(wildcard www/lib/theme/black-green-*.css)
 	npm install
 	npx cap sync
 
