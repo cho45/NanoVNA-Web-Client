@@ -79,6 +79,8 @@ See also <a href="https://developer.mozilla.org/en-US/docs/WebAssembly/Rust_to_w
 
 # Install
 
+<img src="https://chart.apis.google.com/chart?cht=qr&chs=200x200&chl=https://play.google.com/store/apps/details?id=net.lowreal.nanovnawebapp">
+
 Play Store: https://play.google.com/store/apps/details?id=net.lowreal.nanovnawebapp
 
 # Install latest nightly
