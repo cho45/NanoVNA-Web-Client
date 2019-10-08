@@ -12,10 +12,16 @@ cap:
 	ln -sf $(CURDIR)/dsp-wasm www
 	cp -RL lib www/lib
 	rm -r www/lib/webdfu
-	sh -c 'rm -f www/lib/comlink/{esm,umd}/node-adapter.*'
-	sh -c 'rm -f www/lib/comlink/{esm,umd}/*.{ts,map}'
-	sh -c 'rm -f www/lib/material-design-icons-iconfont/fonts/*.{json,ttf,eot,woff}'
-	sh -c 'rm -f www/lib/theme/*.scss www/lib/theme/*/*.scss www/lib/theme/{black-green-dark,black-green-light}.css'
+	rm $(wildcard www/lib/comlink/*/node-adapter.*)
+	rm $(wildcard www/lib/comlink/*/*.ts)
+	rm $(wildcard www/lib/comlink/*/*.map)
+	rm $(wildcard www/lib/material-design-icons-iconfont/fonts/*.json)
+	rm $(wildcard www/lib/material-design-icons-iconfont/fonts/*.ttf)
+	rm $(wildcard www/lib/material-design-icons-iconfont/fonts/*.eot)
+	rm $(wildcard www/lib/material-design-icons-iconfont/fonts/*.woff)
+	rm $(wildcard www/lib/theme/*.scss)
+	rm $(wildcard www/lib/theme/*/*.scss)
+	rm $(wildcard www/lib/theme/black-green-*.css)
 	npm install
 	npx cap sync
 
