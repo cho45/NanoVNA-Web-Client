@@ -21,8 +21,6 @@
 #-renamesourcefileattribute SourceFile
 
 -keep public class org.apache.cordova.CordovaPlugin
--keep public class fr.drangies.cordova.serial.**
-#-keep public class android.hardware.usb.UsbDevice
 -keepclasseswithmembers public class com.getcapacitor.plugin.App {
     static *;
     public *;
@@ -35,6 +33,8 @@
     static *;
     public *;
 }
+
+-keep public class fr.drangies.cordova.serial.**
 -keepclasseswithmembers class com.hoho.android.usbserial.driver.** {
     static *;
     public *;

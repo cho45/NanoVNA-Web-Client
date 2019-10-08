@@ -12,7 +12,10 @@ cap:
 	ln -sf $(CURDIR)/dsp-wasm www
 	cp -RL lib www/lib
 	rm -r www/lib/webdfu
-	sh -c 'rm www/lib/theme/*.scss www/lib/theme/*/*.scss'
+	sh -c 'rm www/lib/comlink/{esm,umd}/node-adapter.*'
+	sh -c 'rm www/lib/comlink/{esm,umd}/*.{ts,map}'
+	sh -c 'rm www/lib/material-design-icons-iconfont/fonts/*.{json,ttf,eot,woff}'
+	sh -c 'rm www/lib/theme/*.scss www/lib/theme/*/*.scss www/lib/theme/{black-green-dark,black-green-light}.css'
 	npm install
 	npx cap sync
 
