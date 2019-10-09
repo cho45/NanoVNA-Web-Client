@@ -2,7 +2,6 @@
 
 set -ex
 
-cd `git rev-parse --show-toplevel`
 echo $PWD
 
 rm -rf www
