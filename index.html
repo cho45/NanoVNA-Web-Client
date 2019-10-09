@@ -212,14 +212,15 @@
 							<md-icon>save</md-icon>
 							<span class="md-list-item-text">Save State</span>
 						</md-list-item>
-						<md-list-item @click="test" :disabled="!connected">
-							<md-icon>settings_backup_restore</md-icon>
-							<span class="md-list-item-text">Recall State</span>
-						</md-list-item>
 						-->
-						<md-list-item @click="test" :disabled="!connected">
+						<md-list-item @click="showCalibrationDialog = true" :disabled="!connected">
 							<md-icon>settings_input_antenna</md-icon>
-							<span class="md-list-item-text" @click="showCalibrationDialog = true">Calibrate...</span>
+							<span class="md-list-item-text">Calibrate...</span>
+						</md-list-item>
+
+						<md-list-item @click="recall(n)" :disabled="!connected" v-for="n in [0, 1, 2, 3, 4]">
+							<md-icon>arrow_left</md-icon>
+							<span class="md-list-item-text">Recall {{n}}</span>
 						</md-list-item>
 
 						<md-divider></md-divider>

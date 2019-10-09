@@ -95,6 +95,10 @@ class Worker {
 		return await this.nanovna.getCapture();
 	}
 
+	async recall(n) {
+		return await this.nanovna.recall(n);
+	}
+
 	async doCal(type) {
 		return await this.nanovna.doCal(type);
 	}

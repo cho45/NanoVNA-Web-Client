@@ -636,6 +636,11 @@ new Vue({
 			});
 		},
 
+		recall: async function (n) {
+			await this.backend.recall(n);
+			this.showSnackbar(`Recalled ${n}`);
+		},
+
 		calibration: async function (step, argv) {
 			this.calibrationRunning = true;
 			if (step === 'reset') {

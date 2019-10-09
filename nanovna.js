@@ -249,6 +249,10 @@ class NanoVNA_Base {
 		return uint16view;
 	}
 
+	async recall(n) {
+		await this.sendCommand(`recall ${n}\r`);
+	}
+
 	async doCal(type) {
 		await this.sendCommand(`cal ${type}\r`);
 	}
