@@ -104,6 +104,8 @@ $ npx cap open android
 ## (relen)
 
  * Edit android/app/build.gradle and increment version
+ * commit version
+ * tag version
  * Build -> Generate Signed Bundle / APK
  * Android Build Bundle
 

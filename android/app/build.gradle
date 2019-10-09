@@ -12,7 +12,7 @@ android {
         applicationId "net.lowreal.nanovnawebapp"
         minSdkVersion 24
         targetSdkVersion 28
-        versionCode 5
+        versionCode 6
         versionName getVersion()
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
