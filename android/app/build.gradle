@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def getVersion() {
+    def proc = "git describe --dirty --always --tags".execute()
+    proc.waitFor()
+    (proc.exitValue() == 0) ? proc.text.trim() : ""
+}
+
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -7,7 +13,7 @@ android {
         minSdkVersion 24
         targetSdkVersion 28
         versionCode 5
-        versionName "1.2"
+        versionName getVersion()
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {

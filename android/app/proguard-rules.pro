@@ -21,15 +21,15 @@
 #-renamesourcefileattribute SourceFile
 
 -keep public class org.apache.cordova.CordovaPlugin
--keepclasseswithmembers public class com.getcapacitor.plugin.App {
+-keep public class com.getcapacitor.plugin.App {
     static *;
     public *;
 }
--keepclasseswithmembers public class com.getcapacitor.plugin.Device {
+-keep public class com.getcapacitor.plugin.Device {
     static *;
     public *;
 }
--keepclasseswithmembers public class com.getcapacitor.plugin.Filesystem {
+-keep public class com.getcapacitor.plugin.Filesystem {
     static *;
     public *;
 }
