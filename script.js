@@ -365,54 +365,59 @@ new Vue({
 		},
 
 		connect: async function (device0) {
-			const device = device0 || await NanoVNA.requestDevice();
-			if (device) {
-				// for debug
-				window.Backend = this.backend;
+			try {
+				this.showSnackbar('Connecting...');
+				const device = device0 || await NanoVNA.requestDevice();
+				if (device) {
+					// for debug
+					window.Backend = this.backend;
 
-				this.status = 'connecting'
-				let connected = false;
-				try {
-					if ('serial' in navigator || typeof Capacitor !== 'undefined') {
-						const nanovna = new NanoVNA({
-							onerror: (e) => {
-								this.backend.opts.onerror(String(e));
-							},
-							ondisconnected: this.backend.opts.ondisconnected,
-						});
-						await nanovna.open(device);
-						this.backend.nanovna = Comlink.proxy(nanovna);
-						connected = true;
-					} else {
-						connected = await this.backend.open(NanoVNA.deviceInfo(device));
+					this.status = 'connecting'
+					let connected = false;
+					try {
+						if ('serial' in navigator || typeof Capacitor !== 'undefined') {
+							const nanovna = new NanoVNA({
+								onerror: (e) => {
+									this.backend.opts.onerror(String(e));
+								},
+								ondisconnected: this.backend.opts.ondisconnected,
+							});
+							await nanovna.open(device);
+							this.backend.nanovna = Comlink.proxy(nanovna);
+							connected = true;
+						} else {
+							connected = await this.backend.open(NanoVNA.deviceInfo(device));
+						}
+					} catch (e) {
+						this.showSnackbar('failed to open: ' + e);
 					}
-				} catch (e) {
-					this.showSnackbar('failed to open: ' + e);
-				}
-				if (!connected) {
-					this.status = 'disconnected';
-					return;
-				}
+					if (!connected) {
+						this.status = 'disconnected';
+						return;
+					}
 
-				this.deviceInfo.version = await this.backend.getVersion();
-				this.status = 'connected';
-				this.showSnackbar('Connected');
+					this.deviceInfo.version = await this.backend.getVersion();
+					this.status = 'connected';
+					this.showSnackbar('Connected');
 
-				/*
-				const start = 50e3;
-				const stop  = 900e6;
-				const points = 101;
-				const step = (stop - start) / (points - 1);
-				const frequencies =  new Uint32Array(points).map( (_, i) => step*i+start);
-				console.log(frequencies);
-				this.backend.frequencies = frequencies;
-				*/
-				
-				this.update();
-			} else {
-				if (!this.serialMode) {
-					prompt("If you have problems with WebUSB, you can use Web Serial API with enabling flag enable-experimental-web-platform-features.", "chrome://flags/#enable-experimental-web-platform-features");
+					/*
+					const start = 50e3;
+					const stop  = 900e6;
+					const points = 101;
+					const step = (stop - start) / (points - 1);
+					const frequencies =  new Uint32Array(points).map( (_, i) => step*i+start);
+					console.log(frequencies);
+					this.backend.frequencies = frequencies;
+					*/
+					
+					this.update();
+				} else {
+					if (!this.serialMode) {
+						prompt("If you have problems with WebUSB, you can use Web Serial API with enabling flag enable-experimental-web-platform-features.", "chrome://flags/#enable-experimental-web-platform-features");
+					}
 				}
+			} catch (e) {
+				this.showSnackbar(e);
 			}
 		},
 
