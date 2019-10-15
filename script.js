@@ -104,6 +104,13 @@ Chart.Tooltip.positioners.custom = function (elements, eventPosition) {
 	};
 };
 
+function versionNumber(str) {
+	const version = str.match(/(\d+)\.(\d+)\.(\d+)/);
+	if (version) {
+		return Array.from(version).slice(1).reduce( (r, i) => r * 10000 + Number(i), 0)
+	} 
+}
+
 function colorGen(h, s, l, i) {
 	if (!h) h = 0;
 	if (!s) s = 60;
@@ -316,7 +323,10 @@ new Vue({
 		},
 
 		deviceInfo: {
+			versionNumber: undefined,
 			version: null,
+			buildTimeStr: '',
+			buildTime: null,
 			info: '',
 		},
 		webVersion: "",
@@ -397,8 +407,21 @@ new Vue({
 					}
 
 					this.deviceInfo.version = await this.backend.getVersion();
+					this.deviceInfo.info = await this.backend.getInfo();
+					this.deviceInfo.buildTimeStr = this.deviceInfo.info.match(/Build time:\s*(([a-z]{3}) (\d\d) (\d{4}) - (\d\d):(\d\d):(\d\d))/i)[1] || '';
+					this.deviceInfo.buildTime = strptime(this.deviceInfo.buildTimeStr, '%B %d %Y - %H:%M:%S');
+					this.deviceInfo.versionNumber = versionNumber(this.deviceInfo.version);
+
+					const v = this.deviceInfo.versionNumber || 0;
+					if (v < versionNumber('0.2.0')) {
+						alert(`Your NanoVNA firmware may be too old: ${this.deviceInfo.version}\nPlease upgrade firmware to 0.2.0 or above.`);
+					}
+
+					console.log(Object.assign({}, this.deviceInfo));
+
 					this.status = 'connected';
 					this.showSnackbar('Connected');
+
 
 					/*
 					const start = 50e3;
@@ -859,7 +882,6 @@ new Vue({
 				const info = await Capacitor.Plugins.Device.getInfo();
 				this.webVersion = `${info.appVersion} (${info.platform} ${info.osVersion} ${info.model})`;
 			}
-			this.deviceInfo.info = await this.backend.getInfo();
 		},
 
 		showSnackbar: function (message) {
@@ -1392,6 +1414,7 @@ new Vue({
 				this.showSnackbar('Disconnected');
 			},
 		}));
+
 		const device = await NanoVNA.getDevice();
 		this.connect(device);
 

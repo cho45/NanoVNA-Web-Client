@@ -19,6 +19,7 @@
     "comlink": "^4.0.2",
     "cordovarduino": "0.0.10",
     "material-design-icons-iconfont": "^5.0.1",
+    "micro-strptime": "^0.2.3",
     "strftime": "^0.10.0",
     "vue": "^2.6.10",
     "vue-material": "^1.0.0-beta-11"
