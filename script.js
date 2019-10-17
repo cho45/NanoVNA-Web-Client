@@ -1416,7 +1416,9 @@ new Vue({
 		}));
 
 		const device = await NanoVNA.getDevice();
-		this.connect(device);
+		if (device) {
+			this.connect(device);
+		}
 
 		this.$watch('range.segments', () => {
 			this.stop();
