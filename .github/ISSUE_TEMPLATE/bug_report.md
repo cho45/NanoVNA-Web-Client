@@ -23,15 +23,10 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
 **Environment (please complete the following information):**
  - Serial Interface [e.g. WebUSB/WebSerial/Capacitor]
  - OS: [e.g. macOS 10.13 / Windows 10]
- - Browser [e.g. Chrome]
+ - Browser [e.g. Chrome 77.0.3865.90]
  - Version [e.g. 1790f9f]
 
 **Additional context**
