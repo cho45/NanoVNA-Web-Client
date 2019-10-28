@@ -11,13 +11,13 @@ https://cho45.stfuawsc.com/NanoVNA/
 
 # RUN with WebSerial
 
-Chrome 78 enables WebSerial by default!
+WebSerial is more experimental feature than WebUSB on Google Chrome. But it may resolve driver issues around WebUSB.
 
-1. Access to https://cho45.stfuawsc.com/NanoVNA/ .
-2. Connect your NanoVNA to USB port.
-3. Click [CONNECT] and select the device.
+1. Enable flag: chrome://flags/#enable-experimental-web-platform-features
+2. Access to https://cho45.stfuawsc.com/NanoVNA/ .
+3. Connect your NanoVNA to USB port.
+4. Click [CONNECT] and select the device.
 
-<!--
 # RUN with WebUSB
 
 1. Access to https://cho45.stfuawsc.com/NanoVNA/ .
@@ -46,7 +46,7 @@ BE CAREFUL: This rule disables `cdc_acm` driver for all STM32CDC devices (vid:0x
 
 Replace driver with <a href="https://zadig.akeo.ie/">Zadig</a>.
 
--->
+
 # Screenshots
 
 <img src="images/DSC07514-900.jpg">
