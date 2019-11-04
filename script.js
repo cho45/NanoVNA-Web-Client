@@ -408,7 +408,8 @@ new Vue({
 
 					this.deviceInfo.version = await this.backend.getVersion();
 					this.deviceInfo.info = await this.backend.getInfo();
-					this.deviceInfo.buildTimeStr = this.deviceInfo.info.match(/Build time:\s*(([a-z]{3}) (\d\d) (\d{4}) - (\d\d):(\d\d):(\d\d))/i)[1] || '';
+					this.deviceInfo.buildTimeStr = this.deviceInfo.info.match(/Build time:\s*(([a-z]{3})\s*(\d?\d) (\d{4}) - (\d?\d):(\d?\d):(\d?\d))/i)[1] || '';
+					this.deviceInfo.buildTimeStr = this.deviceInfo.buildTimeStr.replace(/\s+/g, ' ');
 					this.deviceInfo.buildTime = strptime(this.deviceInfo.buildTimeStr, '%B %d %Y - %H:%M:%S');
 					this.deviceInfo.versionNumber = versionNumber(this.deviceInfo.version);
 
