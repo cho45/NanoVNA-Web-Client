@@ -91,8 +91,8 @@ class Worker {
 		return await this.nanovna.scan(start, stop, length);
 	}
 
-	async getCapture() {
-		return await this.nanovna.getCapture();
+	async getCapture(width, height) {
+		return await this.nanovna.getCapture(width, height);
 	}
 
 	async recall(n) {

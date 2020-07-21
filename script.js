@@ -192,6 +192,23 @@ function formatFrequency(freq, f) {
 	}
 }
 
+function deserializeInfo(infoStr) {
+	return Object.fromEntries(
+		infoStr.split('\n').map(row => {
+			let [key, val] = row.split(/:\s+/);
+			key = key.toLowerCase().replace(/\s+/, '');
+			return [key, val.trim()];
+		})
+	)
+}
+
+function resolution(board) {
+	if(board === 'NanoVNA-H 4') {
+		return [480, 320];
+	}
+	return [320, 240];
+}
+
 async function downloadFile(url, name) {
 	if (typeof Capacitor === 'undefined') {
 		const a = document.createElement('a');
@@ -328,6 +345,8 @@ new Vue({
 			buildTimeStr: '',
 			buildTime: null,
 			info: '',
+			board: '',
+			resolution: null,
 		},
 		webVersion: "",
 		serialMode: NanoVNA.name.replace(/^NanoVNA_/, ''),
@@ -408,9 +427,11 @@ new Vue({
 
 					this.deviceInfo.version = await this.backend.getVersion();
 					this.deviceInfo.info = await this.backend.getInfo();
+					this.deviceInfo.board = deserializeInfo(this.deviceInfo.info).board;
 					this.deviceInfo.buildTimeStr = this.deviceInfo.info.match(/Build time:\s*(([a-z]{3})\s*(\d?\d) (\d{4}) - (\d?\d):(\d?\d):(\d?\d))/i)[1] || '';
 					this.deviceInfo.buildTimeStr = this.deviceInfo.buildTimeStr.replace(/\s+/g, ' ');
 					this.deviceInfo.buildTime = strptime(this.deviceInfo.buildTimeStr, '%B %d %Y - %H:%M:%S');
+					this.deviceInfo.resolution = resolution(this.deviceInfo.board);
 					this.deviceInfo.versionNumber = versionNumber(this.deviceInfo.version);
 
 					const v = this.deviceInfo.versionNumber || 0;
@@ -705,11 +726,14 @@ new Vue({
 		capture: async function () {
 			this.showCaptureDialog = true;
 			this.capturing = true;
-			const data = await this.backend.getCapture();
+			const [width, height] = this.deviceInfo.resolution;
+			const data = await this.backend.getCapture(width, height);
 
 			const canvas = this.$refs.capture;
+			canvas.width = width;
+			canvas.height = height;
 			const ctx = canvas.getContext('2d');
-			const imd = ctx.createImageData(320, 240);
+			const imd = ctx.createImageData(width, height);
 			const rgba = imd.data;
 			for (var i = 0, len = data.length; i < len; i++) {
 				const c565 = data[i];
