@@ -271,6 +271,10 @@ class NanoVNA_Base {
 }
 
 class NanoVNA_WebUSB extends NanoVNA_Base {
+	static get OPEN_IN_BACKEND() {
+		return true;
+	}
+
 	constructor(opts) {
 		super(opts);
 	}
@@ -436,6 +440,10 @@ class NanoVNA_WebUSB extends NanoVNA_Base {
 }
 
 class NanoVNA_WebSerial extends NanoVNA_Base {
+	static get OPEN_IN_BACKEND() {
+		return false;
+	}
+
 	constructor(opts) {
 		super(opts);
 	}
@@ -540,6 +548,10 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 }
 
 class NanoVNA_Capacitor extends NanoVNA_Base {
+	static get OPEN_IN_BACKEND() {
+		return false;
+	}
+
 	constructor(opts) {
 		super(opts);
 	}
@@ -607,14 +619,95 @@ class NanoVNA_Capacitor extends NanoVNA_Base {
 		this.initialized = false;
 	}
 }
+
+class NanoVNA_WebSocket extends NanoVNA_Base {
+	static get OPEN_IN_BACKEND() {
+		return false;
+	}
+
+	constructor(opts) {
+		super(opts);
+	}
+
+	static async requestDevice(filters) {
+		return {};
+	}
+
+	static async getDevice(opts) {
+		return null;
+	}
+
+	static deviceInfo(device) {
+		// no information for serial port...
+		return { };
+	}
+
+	async open() {
+		const match = location.hash.match(/ws=([^ ;&]+)/);
+		const uri = match[1];
+		console.log('connect to', uri);
+
+		this.socket = new WebSocket(uri);
+		this.socket.binaryType = "arraybuffer";
+
+		await new Promise( (resolve, reject) => {
+			const socket = this.socket;
+			socket.addEventListener("open", function me (e) {
+				socket.removeEventListener("open", me);
+				resolve();
+			});
+			socket.addEventListener("error", function me (e) {
+				socket.removeEventListener("error", me);
+				reject(e);
+			});
+		});
+
+		this.socket.addEventListener("open", (e) => {
+			console.log('webthis.socket opened');
+		});
+
+		this.socket.addEventListener("close", (e) => {
+			console.log('webthis.socket closed');
+		});
+
+		this.socket.addEventListener("error", (e) => {
+			console.log('webthis.socket error', e);
+		});
+
+		this.encoder = new TextEncoder();
+		await this.init();
+	}
+
+	async startReaderThread(callback) {
+		if (this.readerThread) {
+			throw new Error("already started");
+		}
+
+		this.socket.addEventListener('message', function (event) {
+			callback(new Uint8Array(event.data));
+		});
+	}
+
+	async write(data) {
+		console.log('write', data);
+		this.socket.send(data);
+	}
+
+	async close() {
+		this.socket.close(1000, "normaly close");
+		this.ondisconnected();
+		this.initialized = false;
+	}
+}
 console.log('typeof serial', typeof serial);
 
 const NanoVNA =
+	(location.hash.startsWith("#ws=")) ? NanoVNA_WebSocket:
 	(typeof Capacitor !== "undefined") ? NanoVNA_Capacitor:
 	("serial" in navigator) ? NanoVNA_WebSerial:
 	NanoVNA_WebUSB;
 
 // const NanoVNA = NanoVNA_WebUSB;
 //const NanoVNA = NanoVNA_WebSerial;
-console.log(`Use ${NanoVNA.constructor.name} backend`);
+console.log(`Use ${NanoVNA.name} backend`);
 

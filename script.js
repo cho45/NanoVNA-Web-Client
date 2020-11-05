@@ -385,7 +385,9 @@ new Vue({
 					this.status = 'connecting'
 					let connected = false;
 					try {
-						if ('serial' in navigator || typeof Capacitor !== 'undefined') {
+						if (NanoVNA.OPEN_IN_BACKEND) {
+							connected = await this.backend.open(NanoVNA.deviceInfo(device));
+						} else {
 							const nanovna = new NanoVNA({
 								onerror: (e) => {
 									this.backend.opts.onerror(String(e));
@@ -395,8 +397,6 @@ new Vue({
 							await nanovna.open(device);
 							this.backend.nanovna = Comlink.proxy(nanovna);
 							connected = true;
-						} else {
-							connected = await this.backend.open(NanoVNA.deviceInfo(device));
 						}
 					} catch (e) {
 						this.showSnackbar('failed to open: ' + e);
