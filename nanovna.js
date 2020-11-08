@@ -643,8 +643,8 @@ class NanoVNA_WebSocket extends NanoVNA_Base {
 	}
 
 	async open() {
-		const match = location.hash.match(/ws=([^ ;&]+)/);
-		const uri = match[1];
+		const match = location.hash.match(/ws(?:=([^ ;&]+))/);
+		const uri = match ? match[1] : `ws://${location.host}/ws`;
 		console.log('connect to', uri);
 
 		this.socket = new WebSocket(uri);
@@ -702,7 +702,7 @@ class NanoVNA_WebSocket extends NanoVNA_Base {
 console.log('typeof serial', typeof serial);
 
 const NanoVNA =
-	(location.hash.startsWith("#ws=")) ? NanoVNA_WebSocket:
+	(location.hash.startsWith("#ws")) ? NanoVNA_WebSocket:
 	(typeof Capacitor !== "undefined") ? NanoVNA_Capacitor:
 	("serial" in navigator) ? NanoVNA_WebSerial:
 	NanoVNA_WebUSB;
