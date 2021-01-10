@@ -235,10 +235,7 @@ class NanoVNA_Base {
 		return await this.sendCommand(`version\r`, async () => await this.readline());
 	}
 
-	async getCapture() {
-		const width = 320;
-		const height = 240;
-
+	async getCapture(width = 320, height = 240) {
 		const string = await this.sendCommand(`capture\r`, async () => await this.read(width * height * 2));
 		const uint16view = new Uint16Array(width * height);
 		for (var i = 0, len = width * height; i < len; i++) {
