@@ -3,11 +3,11 @@ Copyright (c) 2019, cho45 <cho45@lowreal.net>
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
     Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the 
+    Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the
     documentation and/or other materials provided with the distribution.
     Neither the name of Great Scott Gadgets nor the names of its contributors may be used to endorse or promote products derived from this software
     without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
 THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -92,7 +92,7 @@ class NanoVNA_Base {
 		this.version = await this.getVersion();
 		console.log('version', this.version);
 	}
-	
+
 
 	async read(n) {
 		if (!n) n = 1;
@@ -300,7 +300,7 @@ class NanoVNA_WebUSB extends NanoVNA_Base {
 				if (d.productId !== opts.productId) {
 					return false;
 				}
-			} 
+			}
 			if (opts.serialNumber) {
 				if (d.serialNumber !== opts.serialNumber) {
 					return false;
@@ -462,8 +462,8 @@ class NanoVNA_WebSerial extends NanoVNA_Base {
 
 	async open(port) {
 		await port.open({
-			baudrate: 115200,
-			buffersize: 262144,
+			baudRate: 115200,
+			bufferSize: 262144,
 			/*
 			databits: 8,
 			parity: 0,
@@ -617,4 +617,3 @@ const NanoVNA =
 // const NanoVNA = NanoVNA_WebUSB;
 //const NanoVNA = NanoVNA_WebSerial;
 console.log(`Use ${NanoVNA.constructor.name} backend`);
-
