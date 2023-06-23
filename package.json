@@ -14,7 +14,7 @@
   "license": "GPL",
   "dependencies": {
     "@capacitor/android": "^1.2.1",
-    "@capacitor/cli": "^1.2.1",
+    "@capacitor/cli": "^5.0.5",
     "@capacitor/core": "^1.2.1",
     "comlink": "^4.0.2",
     "cordovarduino": "0.0.10",
