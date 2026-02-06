@@ -92,5 +92,5 @@ Android App support has been discontinued in favor of WebSerial. Please use the 
 
 # License
 
-[BSD 2-Clause License](COPYING)
+[GPLv2](COPYING)
 

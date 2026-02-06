@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "license": "GPL-2.0",
   "scripts": {
     "dev": "CI=1 vite",
     "build": "CI=1 vite build",
