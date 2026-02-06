@@ -31,7 +31,7 @@ const handleClearCache = async () => {
           </div>
           <div class="divider"></div>
           <p>A web-based interface for the NanoVNA<br>using WebUSB/WebSerial.</p>
-          <p>License: BSD-3-Clause</p>
+          <p>License: GPLv2</p>
           <div class="divider"></div>
           <p style="font-size: 12px; color: var(--text-dim);">
             This application uses the Web Serial and Web USB APIs.
