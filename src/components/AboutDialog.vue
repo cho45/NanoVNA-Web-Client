@@ -8,6 +8,14 @@ defineProps({
 const emit = defineEmits(['close']);
 
 const version = __APP_VERSION__;
+
+import { clearAppCache } from '../utils/cache';
+
+const handleClearCache = async () => {
+  if (confirm('This will clear the application cache and realod. Are you sure?')) {
+    await clearAppCache();
+  }
+};
 </script>
 
 <template>
@@ -39,6 +47,7 @@ const version = __APP_VERSION__;
         </div>
       </div>
       <div class="dialog-actions">
+        <button class="btn btn-primary" @click="handleClearCache">Update App (Clear Cache)</button>
         <button class="btn btn-primary" @click="$emit('close')">Close</button>
       </div>
     </div>
