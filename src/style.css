@@ -1,0 +1,296 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+:root {
+  /* Colors - Vue Material Default Light Theme */
+  --primary: #448aff;
+  --accent: #ff5252;
+  --bg-color: #fafafa;
+  --surface-color: #ffffff;
+  --text-main: rgba(0, 0, 0, 0.87);
+  --text-dim: rgba(0, 0, 0, 0.54);
+  --text-inverse: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.12);
+  --divider: rgba(0, 0, 0, 0.12);
+
+  --header-height: 64px;
+  --drawer-width: 280px;
+  --transition: .4s cubic-bezier(.4, 0, .2, 1);
+  --shadow-1: 0 3px 1px -2px rgba(0, 0, 0, .2), 0 2px 2px 0 rgba(0, 0, 0, .14), 0 1px 5px 0 rgba(0, 0, 0, .12);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Roboto', sans-serif;
+  line-height: normal;
+}
+
+/* Material Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: 400;
+}
+
+.md-title {
+  font-size: 20px;
+  letter-spacing: .005em;
+  font-weight: 500;
+}
+
+/* Layout Shell - Faithfully replicating md-app */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.header {
+  height: var(--header-height);
+  background: var(--surface-color);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  box-shadow: var(--shadow-1);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 20;
+  transition: opacity var(--transition);
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--drawer-width);
+  background: var(--surface-color);
+  box-shadow: var(--shadow-1);
+  z-index: 30;
+  transform: translateX(-100%);
+  transition: transform var(--transition);
+  overflow-y: auto;
+}
+
+.drawer.open {
+  transform: translateX(0);
+}
+
+.main-content {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (orientation: landscape) {
+  .main-content {
+    flex-direction: row;
+  }
+
+  .input-panel {
+    max-width: 480px;
+    min-width: 240px;
+    margin-right: 16px;
+  }
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--transition);
+  color: var(--text-main);
+}
+
+.btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.btn-primary {
+  color: var(--primary);
+}
+
+.btn-accent {
+  color: var(--accent);
+}
+
+.btn-raised {
+  box-shadow: 0 3px 1px -2px rgba(0, 0, 0, .2), 0 2px 2px 0 rgba(0, 0, 0, .14), 0 1px 5px 0 rgba(0, 0, 0, .12);
+}
+
+.btn-raised.btn-primary {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+.btn-raised.btn-accent {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  color: inherit;
+}
+
+/* Material Icons */
+.icon {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Components Foundation */
+.card {
+  background: var(--surface-color);
+  box-shadow: var(--shadow-1);
+  border-radius: 2px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--divider);
+  margin: 8px 0;
+}
+
+/* Tabs */
+.tabs-navigation {
+  display: flex;
+  height: 48px;
+  border-bottom: 1px solid var(--divider);
+  background: var(--surface-color);
+}
+
+.tab-btn {
+  flex: 1;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.tab-btn.active {
+  color: var(--primary);
+}
+
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary);
+}
+
+/* Chip */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 16px;
+  background: #e0e0e0;
+  color: rgba(0, 0, 0, 0.87);
+  font-size: 13px;
+  margin: 4px;
+  cursor: pointer;
+  border: none;
+}
+
+/* Dialog Overlay */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: var(--surface-color);
+  box-shadow: 0 11px 15px -7px rgba(0, 0, 0, .2), 0 24px 38px 3px rgba(0, 0, 0, .14), 0 9px 46px 8px rgba(0, 0, 0, .12);
+  border-radius: 2px;
+  min-width: 280px;
+  max-width: 80%;
+}
+
+.dialog-title {
+  padding: 24px 24px 20px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.dialog-content {
+  padding: 0 24px 24px;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+
+.dialog-actions {
+  padding: 8px;
+  display: flex;
+  justify-content: flex-end;
+}

@@ -2,7 +2,7 @@
 name = "dsp-wasm"
 version = "0.1.0"
 authors = ["cho45 <cho45@lowreal.net>"]
-edition = "2018"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,6 +10,12 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-wasm-bindgen = "0.2"
-rustfft = "*"
-console_error_panic_hook = "*"
+wasm-bindgen = "0.2.95"
+rustfft = "6.2.0"
+console_error_panic_hook = "0.1.7"
+num-complex = "0.4"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
