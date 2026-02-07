@@ -1,5 +1,5 @@
 import * as Comlink from 'comlink';
-import NanoVNA from './lib/nanovna';
+import { NanoVNA_Base, NanoVNA_WebSerial, NanoVNA_WebUSB } from './lib/nanovna';
 import initWasm, { FFT, DSP } from '../dsp-wasm/web/dsp_wasm';
 
 const FFT_SIZE = 8192;
@@ -12,12 +12,17 @@ class NanoVNAWorker {
         this.fft = null;
         this.dsp = null;
         this.frequencies = null;
+        this.callbacks = null;
     }
 
-    async init(callbacks) {
-        this.onerror = callbacks.onerror;
-        this.ondisconnected = callbacks.ondisconnected;
+    async init(callbacks, options = {}) {
+        this.callbacks = callbacks;
         console.log('init worker');
+
+        // Skip WASM initialization for tests
+        if (options.skipWasm) {
+            return;
+        }
 
         // Initialize WASM
         await initWasm();
@@ -25,11 +30,16 @@ class NanoVNAWorker {
         const window = new Float32Array(FFT_SIZE);
         window.fill(1);
         this.fft = new FFT(FFT_SIZE, window);
-        this.dsp = new DSP(NanoVNA.DUMP_BUFFER_LEN);
+        this.dsp = new DSP(NanoVNA_Base.DUMP_BUFFER_LEN);
     }
 
     async open(opts) {
         console.log('worker.open starting with opts:', opts);
+
+        const NanoVNA = opts.type === 'usb' ? NanoVNA_WebUSB : NanoVNA_WebSerial;
+
+        // Logic update:
+        // We rely on getDevice finding the device.
         const device = await NanoVNA.getDevice(opts);
         if (!device) {
             throw new Error('Device not found or not authorized');
@@ -37,11 +47,14 @@ class NanoVNAWorker {
 
         this.nanovna = new NanoVNA({
             onerror: (e) => {
-                if (this.onerror) this.onerror(String(e));
+                if (this.callbacks) this.callbacks.onerror(String(e));
             },
             ondisconnected: () => {
-                if (this.ondisconnected) this.ondisconnected();
+                if (this.callbacks) this.callbacks.ondisconnected();
             },
+            log: (msg) => {
+                if (this.callbacks) this.callbacks.log(msg);
+            }
         });
 
         await this.nanovna.open(device);
@@ -148,5 +161,8 @@ class NanoVNAWorker {
         return null;
     }
 }
+
+// Export for testing
+export { NanoVNAWorker };
 
 Comlink.expose(new NanoVNAWorker());

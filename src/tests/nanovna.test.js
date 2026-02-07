@@ -353,6 +353,7 @@ describe('NanoVNA_WebUSB (Deterministic)', () => {
     beforeEach(() => {
         usbQueue = new AsyncQueue();
         device = {
+            configuration: null,
             open: vi.fn().mockResolvedValue(),
             selectConfiguration: vi.fn().mockResolvedValue(),
             claimInterface: vi.fn().mockResolvedValue(),

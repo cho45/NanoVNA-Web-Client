@@ -1,6 +1,6 @@
 import { reactive, watch } from 'vue';
 import * as Comlink from 'comlink';
-import NanoVNA from './lib/nanovna';
+import { NanoVNA_WebSerial, NanoVNA_WebUSB } from './lib/nanovna';
 
 const STORAGE_KEY = 'nanovna-web-client-state';
 
@@ -14,6 +14,7 @@ const defaultState = {
         length: 101, // points
         segments: 1,  // missing in previous
     },
+    connectionType: 'auto', // 'auto', 'serial', 'usb'
     traces: [
         { id: 0, show: true, channel: 0, format: 'smith', scale: 1.0, offset: 0, color: '#f44336', type: 'clear', avgCount: 2 },
         { id: 1, show: true, channel: 0, format: 'logmag', scale: 10.0, offset: 0, color: '#4caf50', type: 'clear', avgCount: 2 },
@@ -44,7 +45,14 @@ const defaultState = {
     version: '',
     info: '',
     dataVersion: 0, // Increment to force reactive updates
+    debugLogs: [],
 };
+
+export function log(msg) {
+    const time = new Date().toLocaleTimeString();
+    store.debugLogs.push(`[${time}] ${msg}`);
+    console.log(msg);
+}
 
 function loadState() {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -57,7 +65,9 @@ function loadState() {
             // Merge primitives
             if (parsed.activeMarker !== undefined) state.activeMarker = parsed.activeMarker;
             if (parsed.autoUpdate !== undefined) state.autoUpdate = parsed.autoUpdate;
+
             if (parsed.velocityFactor !== undefined) state.velocityFactor = parsed.velocityFactor;
+            if (parsed.connectionType !== undefined) state.connectionType = parsed.connectionType;
 
             // Deep merge nested
             if (parsed.frequencies) {
@@ -86,7 +96,8 @@ watch(store, (newState) => {
         activeMarker: newState.activeMarker,
         scales: newState.scales,
         velocityFactor: newState.velocityFactor,
-        autoUpdate: newState.autoUpdate
+        autoUpdate: newState.autoUpdate,
+        connectionType: newState.connectionType,
     }));
 }, { deep: true });
 
@@ -111,13 +122,35 @@ export async function getWorker() {
     return workerProxy;
 }
 
+export function detectBestConnectionType() {
+    if (store.connectionType === 'serial') return 'serial';
+    if (store.connectionType === 'usb') return 'usb';
+
+    // Auto
+    const userAgent = navigator.userAgent || '';
+    const isAndroid = /Android/i.test(userAgent);
+
+    if (isAndroid) {
+        if (navigator.usb) return 'usb';
+        if (navigator.serial) return 'serial';
+    } else {
+        if (navigator.serial) return 'serial';
+        if (navigator.usb) return 'usb';
+    }
+    return 'serial'; // Default fallback
+}
+
 export async function connect() {
     try {
         store.status = 'connecting';
 
-        // Try getting existing ports first (like Original mounted)
-        let device = (await navigator.serial.getPorts())[0];
+        const type = detectBestConnectionType();
+        store.connectionType = type; // Ensure store state reflects detection
+        console.log('connect type:', type);
 
+        const NanoVNA = type === 'usb' ? NanoVNA_WebUSB : NanoVNA_WebSerial;
+
+        let device = await NanoVNA.getDevice();
         if (!device) {
             device = await NanoVNA.requestDevice();
         }
@@ -127,41 +160,67 @@ export async function connect() {
             return;
         }
 
-        const worker = await getWorker();
+        store.info = NanoVNA.deviceInfo(device);
 
-        // Initialize worker with callbacks
-        await worker.init(Comlink.proxy({
+        // Always get the worker for DSP operations
+        const dspWorker = await getWorker();
+
+        // Define callbacks
+        // Note: logs need to be proxied to be called from worker
+        // Wrap object with Comlink.proxy so the worker receives a proxy to this object
+        const proxyCallbacks = Comlink.proxy({
             onerror: (e) => {
-                console.error('Worker error:', e);
-                // store.status = 'disconnected'; // Maybe?
+                log('Worker/Client error: ' + e);
+                store.error = String(e); // Show error
             },
             ondisconnected: () => {
-                console.log('Worker disconnected');
-                store.status = 'disconnected';
-                store.autoUpdate = false;
+                log('Worker/Client disconnected');
+                disconnect();
+            },
+            log: (msg) => {
+                log(msg);
             }
-        }));
+        });
 
-        const ok = await worker.open({ type: 'serial' });
+        await dspWorker.init(proxyCallbacks);
 
-        if (ok) {
-            store.status = 'connected';
-            store.autoUpdate = true; // Ensure data acquisition starts
-            store.version = await worker.getVersion();
-            store.info = await worker.getInfo();
-            startUpdateLoop();
+        if (type === 'usb') {
+            log('Opening WebUSB device...');
+            // The worker will find the device using getDevice() since we already requested permission.
+            await dspWorker.open({ type: 'usb' });
+            log('WebUSB device opened');
+        } else {
+            // Serial
+            await dspWorker.open({ type: 'serial' });
         }
+        // workerProxy is already dspWorker
+
+        store.status = 'connected';
+        store.autoUpdate = true;
+        store.version = await workerProxy.getVersion();
+        store.info = await workerProxy.getInfo();
+        startUpdateLoop();
     } catch (e) {
+        log('Connect function caught error: ' + e);
+        console.error('Connect function caught error:', e);
         store.status = 'disconnected';
-        console.error('Connection failed', e);
+        store.error = String(e);
+        // Clean up
+        disconnect();
         throw e;
     }
 }
 
 export async function disconnect() {
     if (workerProxy) {
-        await workerProxy.close();
+        try {
+            await workerProxy.close();
+        } catch (e) {
+            console.error('Error closing connection:', e);
+        }
     }
+    workerProxy = null;
+    workerInstance = null; // Also clear instance to force full re-init
     store.status = 'disconnected';
 }
 

@@ -16,7 +16,12 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABI
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-const DATA_CLASS_INTERFACE = 1;
+
+const CDC_ACM_INTERFACE = 0;
+const CDC_DATA_INTERFACE = 1;
+const CDC_SET_LINE_CODING = 0x20;
+const CDC_SET_CONTROL_LINE_STATE = 0x22;
+
 const USBD1_DATA_REQUEST_EP = 1;
 const USBD1_DATA_AVAILABLE_EP = 1;
 
@@ -35,6 +40,7 @@ export class NanoVNA_Base {
     constructor(opts = {}) {
         this.onerror = opts.onerror || function () { };
         this.ondisconnected = opts.ondisconnected || function () { };
+        this.log = opts.log || console.log;
         this.initialized = false;
         this.lastCommand = Promise.resolve();
         this.buffer = '';
@@ -267,6 +273,11 @@ export class NanoVNA_Base {
 }
 
 export class NanoVNA_WebUSB extends NanoVNA_Base {
+    constructor(opts) {
+        super(opts);
+        this.device = null;
+    }
+
     static async requestDevice(filters) {
         const device = await navigator.usb.requestDevice({
             filters: filters || [
@@ -300,9 +311,83 @@ export class NanoVNA_WebUSB extends NanoVNA_Base {
         if (this.device) {
             await this.close();
         }
-        await device.open();
-        await device.selectConfiguration(1);
-        await device.claimInterface(DATA_CLASS_INTERFACE);
+
+        this.log('open device ' + ((device && device.productId) ? device.productId : 'unknown'));
+
+        try {
+            await device.open();
+        } catch (e) {
+            this.log('failed to open device: ' + e);
+            throw new Error('failed to open device');
+        }
+
+        await this.wait(0.1);
+
+        if (device.configuration === null) {
+            this.log('selectConfiguration(1)');
+            try {
+                await device.selectConfiguration(1);
+            } catch (e) {
+                this.log('selectConfiguration failed: ' + e);
+                throw e;
+            }
+            await this.wait(0.1); // Wait after configuration change
+        } else {
+            this.log('configuration 1 already selected');
+        }
+
+        // Safety log device configurations
+        try {
+            this.log('configurations: ' + JSON.stringify(device.configurations.map(c => ({
+                value: c.configurationValue,
+                interfaces: c.interfaces.map(i => ({
+                    number: i.interfaceNumber,
+                    claimed: i.claimed,
+                    alternates: i.alternates.length
+                }))
+            }))));
+        } catch (e) {
+            this.log('failed to log configurations: ' + e);
+        }
+
+        // Claim Interface 0 (Control)
+        this.log('claimInterface ' + CDC_ACM_INTERFACE + ' (Control)');
+        try {
+            await device.claimInterface(CDC_ACM_INTERFACE);
+            this.log('claimInterface ' + CDC_ACM_INTERFACE + ' success');
+        } catch (e) {
+            this.log('claimInterface ' + CDC_ACM_INTERFACE + ' failed: ' + e);
+            // On Android, sometimes Control interface is already claimed by OS or not accessible?
+            // Polyfill claims it. If it fails, we should probably throw, but let's see.
+            throw e;
+        }
+
+        // Claim Interface 1 (Data)
+        this.log('claimInterface ' + CDC_DATA_INTERFACE + ' (Data)');
+        try {
+            await device.claimInterface(CDC_DATA_INTERFACE);
+            this.log('claimInterface ' + CDC_DATA_INTERFACE + ' success');
+        } catch (e) {
+            this.log('claimInterface ' + CDC_DATA_INTERFACE + ' failed: ' + e);
+            try { await device.releaseInterface(CDC_ACM_INTERFACE); } catch (e2) { }
+            throw e;
+        }
+
+        // Set Control Line State (DTR=1, RTS=1)
+        this.log('setControlLineState (DTR=1, RTS=1)');
+        try {
+            await device.controlTransferOut({
+                requestType: 'class',
+                recipient: 'interface',
+                request: CDC_SET_CONTROL_LINE_STATE,
+                value: 0x03, // DTR(1) | RTS(2)
+                index: CDC_ACM_INTERFACE
+            });
+        } catch (e) {
+            this.log('setControlLineState failed: ' + e);
+        }
+
+        this.log('device was opened');
         this.device = device;
         await this.init();
     }
@@ -366,13 +451,22 @@ export class NanoVNA_WebUSB extends NanoVNA_Base {
         } catch (e) {
             console.log('failed to stop reader thread', e);
         }
-        try {
-            await this.device.close();
-        } catch (e) {
-            console.log('failed to close device');
+        if (this.device) {
+            try {
+                await this.device.releaseInterface(CDC_DATA_INTERFACE);
+            } catch (e) { console.log(e); }
+            try {
+                await this.device.releaseInterface(CDC_ACM_INTERFACE);
+            } catch (e) { console.log(e); }
+            try {
+                await this.device.close();
+            } catch (e) {
+                console.log('failed to close device');
+            }
         }
         this.ondisconnected();
         this.initialized = false;
+        this.device = null;
     }
 }
 
@@ -471,6 +565,4 @@ export class NanoVNA_WebSerial extends NanoVNA_Base {
 }
 
 
-const NanoVNA = (typeof navigator !== 'undefined' && 'serial' in navigator) ? NanoVNA_WebSerial : NanoVNA_WebUSB;
 
-export default NanoVNA;

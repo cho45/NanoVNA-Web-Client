@@ -27,6 +27,7 @@ vi.mock('comlink', () => ({
         init: vi.fn(),
         open: vi.fn(() => true),
         getVersion: vi.fn(() => '0.2.0'),
+        getInfo: vi.fn(() => ({})),
         close: vi.fn(),
         scan: vi.fn(),
         getData: vi.fn(() => [[0, 0]]),
@@ -40,12 +41,22 @@ vi.mock('comlink', () => ({
     expose: vi.fn(),
 }));
 
-// Mock the worker import
-vi.mock('./worker?worker', () => ({
-    default: MockWorker
+// Mock NanoVNA library
+vi.mock('../lib/nanovna', () => ({
+    NanoVNA_WebSerial: {
+        getDevice: vi.fn(),
+        requestDevice: vi.fn(),
+        deviceInfo: vi.fn(() => 'Serial Device Info'),
+    },
+    NanoVNA_WebUSB: {
+        getDevice: vi.fn(),
+        requestDevice: vi.fn(),
+        deviceInfo: vi.fn(() => 'USB Device Info'),
+    }
 }));
 
 // Mock navigator.serial/usb
+// ... existing navigator mocks ...
 Object.defineProperty(global, 'navigator', {
     value: {
         serial: {
@@ -491,6 +502,47 @@ describe('App Store', () => {
         store.frequencies.stop = 654321;
         await new Promise(r => setTimeout(r, 100));
         expect(worker.setSweep).toHaveBeenCalledWith('stop', 654321);
+    });
+
+    it('should connect using WebUSB when type is usb', async () => {
+        store.connectionType = 'usb';
+        store.status = 'disconnected';
+
+        // Mock NanoVNA_WebUSB response
+        const { NanoVNA_WebUSB } = await import('../lib/nanovna');
+        const mockDevice = { name: 'USB Device' };
+        NanoVNA_WebUSB.getDevice.mockResolvedValue(mockDevice);
+
+        await connect();
+
+        expect(NanoVNA_WebUSB.getDevice).toHaveBeenCalled();
+        expect(store.status).toBe('connected');
+
+        const worker = await getWorker();
+        expect(worker.open).toHaveBeenCalledWith({ type: 'usb' });
+    });
+
+    it('should throw error when connection fails', async () => {
+        store.connectionType = 'serial';
+        store.status = 'disconnected';
+
+        const { NanoVNA_WebSerial } = await import('../lib/nanovna');
+        const mockDevice = { name: 'Serial Device' };
+        NanoVNA_WebSerial.getDevice.mockResolvedValue(mockDevice);
+
+        // Make worker.open throw an error
+        const worker = await getWorker();
+        const originalOpen = worker.open;
+        worker.open = vi.fn().mockRejectedValue(new Error('Connection failed'));
+
+        // connect() should throw
+        await expect(connect()).rejects.toThrow('Connection failed');
+
+        // Verify cleanup happened
+        expect(store.status).toBe('disconnected');
+
+        // Restore
+        worker.open = originalOpen;
     });
 });
 

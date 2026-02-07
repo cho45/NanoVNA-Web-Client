@@ -336,6 +336,15 @@ const quit = () => {
         <button class="btn-nav" @click="disconnect" v-else>
           <span class="icon">cancel</span> Disconnect
         </button>
+
+        <div style="padding: 0 16px; margin: 8px 0;">
+          <label style="font-size: 11px; color: var(--text-dim); display: block; margin-bottom: 4px; text-transform: uppercase;">Connection Type</label>
+          <select v-model="store.connectionType" style="width: 100%; padding: 4px 8px; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; background: transparent; font-size: 13px;">
+            <option value="auto">Auto (Default)</option>
+            <option value="serial">WebSerial</option>
+            <option value="usb">WebUSB</option>
+          </select>
+        </div>
         
         <div class="nav-subheader">Save</div>
         <button class="btn-nav" @click="saveAs('s1p')" :disabled="store.status !== 'connected'">
@@ -373,6 +382,14 @@ const quit = () => {
         <button class="btn-nav" @click="quit">
           <span class="icon">exit_to_app</span> Quit
         </button>
+      </div>
+      <div class="divider"></div>
+      <div class="nav-section">
+        <div class="nav-subheader">Debug Logs</div>
+        <div style="background: rgba(0,0,0,0.05); padding: 8px; font-size: 10px; font-family: monospace; height: 200px; overflow-y: auto; white-space: pre-wrap;">
+          <div v-for="(log, i) in store.debugLogs" :key="i">{{ log }}</div>
+        </div>
+        <button class="btn-nav" @click="store.debugLogs = []">Clear Logs</button>
       </div>
     </aside>
 
